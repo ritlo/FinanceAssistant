@@ -1,14 +1,16 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36327.8 d17.14
+VisualStudioVersion = 17.14.36327.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.AppHost", "FinanceTracker.AppHost\FinanceTracker.AppHost.csproj", "{97EBB8F2-7759-4C9E-8637-A0362595EDCC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.AppHost", "src\FinanceTracker.AppHost\FinanceTracker.AppHost.csproj", "{97EBB8F2-7759-4C9E-8637-A0362595EDCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.ServiceDefaults", "FinanceTracker.ServiceDefaults\FinanceTracker.ServiceDefaults.csproj", "{FAFE9C50-A9EC-F470-A0E8-56CE694593FA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.ServiceDefaults", "src\FinanceTracker.ServiceDefaults\FinanceTracker.ServiceDefaults.csproj", "{FAFE9C50-A9EC-F470-A0E8-56CE694593FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.ApiService", "FinanceTracker.ApiService\FinanceTracker.ApiService.csproj", "{79E16F91-7434-A623-F95A-4C77DD387DDB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.ApiService", "src\FinanceTracker.ApiService\FinanceTracker.ApiService.csproj", "{79E16F91-7434-A623-F95A-4C77DD387DDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.Web", "FinanceTracker.Web\FinanceTracker.Web.csproj", "{3D5EC65A-1094-A5E1-986D-52F19B23C085}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceTracker.Web", "src\FinanceTracker.Web\FinanceTracker.Web.csproj", "{3D5EC65A-1094-A5E1-986D-52F19B23C085}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{97EBB8F2-7759-4C9E-8637-A0362595EDCC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{FAFE9C50-A9EC-F470-A0E8-56CE694593FA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{79E16F91-7434-A623-F95A-4C77DD387DDB} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{3D5EC65A-1094-A5E1-986D-52F19B23C085} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1F25CAB8-EE26-4620-8435-7EBFDC17B417}
