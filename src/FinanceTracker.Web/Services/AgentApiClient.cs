@@ -77,7 +77,7 @@ namespace FinanceTracker.Web.Services
                     else if (line.StartsWith("event: error"))
                     {
                         var error = await reader.ReadLineAsync();
-                        onError?.Invoke(error?.Replace("data: ", ""));
+                        onError?.Invoke(error?.Replace("data: ", "") ?? "Unknown error");
                         break;
                     }
                 }

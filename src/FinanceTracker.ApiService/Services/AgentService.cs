@@ -78,37 +78,15 @@ namespace FinanceTracker.ApiService.Services
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
-            bool errorOccurred = false;
-            string errorMessage = string.Empty;
-            var results = new List<string>();
-
-            try
+            _logger.LogInformation("Streaming prompt with user request: {Request}", userRequest);
+            var resultStream = _kernel.InvokePromptStreamingAsync(userRequest, arguments);
+            await foreach (var update in resultStream)
             {
-                _logger.LogInformation("Streaming prompt with user request: {Request}", userRequest);
-                var resultStream = _kernel.InvokePromptStreamingAsync(userRequest, arguments);
-                await foreach (var update in resultStream)
+                var content = update.ToString();
+                if (!string.IsNullOrEmpty(content))
                 {
-                    var content = update.ToString();
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        results.Add(content);
-                    }
+                    yield return content;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while streaming from the LLM.");
-                errorOccurred = true;
-                errorMessage = "[Error] An error occurred while processing your request.";
-            }
-
-            foreach (var item in results)
-            {
-                yield return item;
-            }
-            if (errorOccurred && errorMessage != null)
-            {
-                yield return errorMessage;
             }
         }
     }

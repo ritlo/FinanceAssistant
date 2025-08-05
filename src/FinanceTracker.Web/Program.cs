@@ -17,6 +17,7 @@ builder.Services.AddOutputCache();
 builder.Services.AddHttpClient<AgentApiClient>(client =>
 {
     client.BaseAddress = new("http://apiservice"); // apiService is the name of our backend project in Aspire
+    client.Timeout = TimeSpan.FromMinutes(5); // Set a longer timeout for streaming
 });
 
 var app = builder.Build();

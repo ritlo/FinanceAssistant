@@ -3,6 +3,15 @@ using FinanceTracker.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel for streaming
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MinResponseDataRate = null; // Disable minimum data rate for streaming
+    serverOptions.Limits.MinRequestBodyDataRate = null; // Disable minimum data rate for streaming
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10); // Increase keep-alive timeout
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(2); // Increase request headers timeout
+});
+
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
