@@ -1,5 +1,6 @@
 using FinanceTracker.Web;
 using FinanceTracker.Web.Components;
+using FinanceTracker.Web.Services; // Add this using directive
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,12 +13,11 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
-builder.Services.AddHttpClient<WeatherApiClient>(client =>
-    {
-        // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
-        // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-        client.BaseAddress = new("https+http://apiservice");
-    });
+// Register AgentApiClient
+builder.Services.AddHttpClient<AgentApiClient>(client =>
+{
+    client.BaseAddress = new("http://apiservice"); // apiService is the name of our backend project in Aspire
+});
 
 var app = builder.Build();
 

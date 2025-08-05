@@ -482,3 +482,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+src/FinanceTracker.ApiService/Data/FinanceTracker-log.db
+src/FinanceTracker.ApiService/Data/FinanceTracker.db
