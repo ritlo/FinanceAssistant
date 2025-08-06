@@ -6,6 +6,7 @@ using System.Linq;
 
 namespace FinanceTracker.ApiService.Services
 {
+    public record MonthlySummaryItem(string Category, decimal TotalAmount);
     public class TransactionService
     {
         private readonly ILiteDbContext _context;
@@ -80,6 +81,29 @@ namespace FinanceTracker.ApiService.Services
                 };
                 _context.Categories.InsertBulk(categories);
             }
+        }
+
+        public IEnumerable<MonthlySummaryItem> GetMonthlySummary(string userId)
+        {
+            _logger.LogInformation("Getting monthly summary for user {UserId}", userId);
+
+            var now = DateTime.UtcNow;
+            var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+            var transactions = _context.Transactions.Find(t =>
+                t.UserId == userId &&
+                t.Date >= firstDayOfMonth &&
+                t.Date <= lastDayOfMonth &&
+                t.Type == TransactionType.Expense);
+
+            var summary = transactions
+                .GroupBy(t => t.Category.Name)
+                .Select(g => new MonthlySummaryItem(g.Key, g.Sum(t => t.Amount)))
+                .OrderByDescending(s => s.TotalAmount)
+                .ToList();
+
+            return summary;
         }
     }
 }

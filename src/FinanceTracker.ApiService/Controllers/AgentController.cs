@@ -2,6 +2,9 @@ using FinanceTracker.ApiService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+using System;
 
 namespace FinanceTracker.ApiService.Controllers
 {
@@ -66,6 +69,31 @@ namespace FinanceTracker.ApiService.Controllers
             {
                 _logger.LogError(ex, "An error occurred while streaming the agent response.");
                 await Response.WriteAsync($"event: error\ndata: {ex.Message}\n\n");
+            }
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadDocument(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File is not provided or empty.");
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "testUser123";
+
+            try
+            {
+                using (var stream = file.OpenReadStream())
+                {
+                    await _agentService.ProcessDocumentStreamAsync(stream, userId, file.FileName);
+                }
+                return Ok("File processed successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing the uploaded document.");
+                return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
             }
         }
     }
