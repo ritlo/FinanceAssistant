@@ -20,6 +20,11 @@ builder.Services.AddHttpClient<AgentApiClient>(client =>
     client.Timeout = TimeSpan.FromMinutes(5); // Set a longer timeout for streaming
 });
 
+builder.Services.AddHttpClient<TransactionApiClient>(client =>
+{
+    client.BaseAddress = new("http://apiservice");
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
