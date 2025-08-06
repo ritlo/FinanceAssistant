@@ -1,4 +1,5 @@
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using FinanceTracker.ApiService.Models.Plugins;
 using Microsoft.Extensions.Configuration;
@@ -67,9 +68,13 @@ namespace FinanceTracker.ApiService.Services
             try
             {
                 _logger.LogInformation("Invoking prompt with user request: {Request}", userRequest);
-                var result = await _kernel.InvokeAsync(new(chatHistory), arguments);
+                var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
+                var result = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: promptExecutionSettings, kernel: _kernel);
                 _logger.LogInformation("Successfully received response from LLM.");
-                return result.GetValue<string>() ?? "I'm sorry, I couldn't process your request.";
+
+                // The response from the LLM might include a tool call to the FinancialPlugin.
+                // The kernel will automatically invoke the tool and the result will be in the content.
+                return result.Content ?? "I'm sorry, I couldn't process your request.";
             }
             catch (Exception ex)
             {
@@ -100,10 +105,11 @@ namespace FinanceTracker.ApiService.Services
             chatHistory.AddUserMessage(userRequest);
 
             _logger.LogInformation("Streaming prompt with user request: {Request}", userRequest);
-            var resultStream = _kernel.InvokeStreamingAsync<StreamingChatMessageContent>(new(chatHistory), arguments);
+            var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
+            var resultStream = chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory, executionSettings: promptExecutionSettings, kernel: _kernel);
             await foreach (var update in resultStream)
             {
-                var content = update.ToString();
+                var content = update.Content;
                 if (!string.IsNullOrEmpty(content))
                 {
                     yield return content;

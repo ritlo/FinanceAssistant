@@ -2,6 +2,9 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.IO;
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace FinanceTracker.Web.Services
 {
@@ -86,6 +89,32 @@ namespace FinanceTracker.Web.Services
             {
                 _logger.LogError(ex, "An error occurred while streaming the request to the API.");
                 onError?.Invoke($"Streaming error: {ex.Message}");
+            }
+        }
+
+        public async Task UploadDocument(IBrowserFile file)
+        {
+            try
+            {
+                using var content = new MultipartFormDataContent();
+                using var fileStream = file.OpenReadStream(file.Size);
+                content.Add(new StreamContent(fileStream), "file", file.Name);
+
+                var response = await _httpClient.PostAsync("/api/agent/upload", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("File upload failed with status code {StatusCode} and content: {ErrorContent}", response.StatusCode, errorContent);
+                    throw new Exception($"File upload failed: {errorContent}");
+                }
+
+                _logger.LogInformation("File uploaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while uploading the file.");
+                throw;
             }
         }
     }

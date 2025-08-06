@@ -1,0 +1,183 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+}
+
+.finance-dashboard {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 800px;
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+.summary-section h2 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.expense-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.expense-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.expense-label {
+    width: 120px;
+    font-size: 16px;
+}
+
+.expense-bar-container {
+    flex-grow: 1;
+    background-color: #e0e0e0;
+    border-radius: 8px;
+    height: 24px;
+    overflow: hidden;
+}
+
+.expense-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff8c94, #ffc48c);
+    border-radius: 8px;
+}
+
+.expense-amount {
+    font-size: 16px;
+    font-weight: 500;
+    width: 80px;
+    text-align: right;
+}
+
+.cards-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.card {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.card-header .icon {
+    font-size: 20px;
+}
+
+.card-header h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.card p {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.chat-section {
+    margin-top: 24px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.messages {
+    height: 300px;
+    overflow-y: auto;
+    padding: 16px;
+    background-color: #f9f9f9;
+}
+
+.user-message, .agent-message {
+    margin-bottom: 12px;
+    display: flex;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.user-message p, .agent-message p {
+    padding: 10px 14px;
+    border-radius: 18px;
+    max-width: 75%;
+    line-height: 1.4;
+}
+
+.user-message p {
+    background-color: #007bff;
+    color: white;
+}
+
+.agent-message p {
+    background-color: #e9e9eb;
+    color: #333;
+}
+
+.input-area {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: #fff;
+    border-top: 1px solid #e0e0e0;
+}
+
+.upload-button {
+    margin-right: 12px;
+}
+
+.input-area .form-control {
+    flex-grow: 1;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #f0f2f5;
+    border-radius: 18px;
+}
+
+.input-area .form-control:focus {
+    outline: none;
+}
+
+.input-area button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-left: 8px;
+}
+
+.input-area button svg {
+    color: #007bff;
+}

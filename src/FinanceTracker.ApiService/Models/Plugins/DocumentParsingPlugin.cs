@@ -16,38 +16,36 @@ namespace FinanceTracker.ApiService.Models.Plugins
             _logger = logger;
         }
 
-        [KernelFunction, Description("Extracts text from a PDF file, optionally using a password if the PDF is encrypted.")]
-        public string ExtractTextFromPdf(
-            [Description("The full path to the PDF file.")] string filePath,
-            [Description("The password for the PDF file, if it is encrypted. Leave empty if not encrypted.")] string? password = null)
+        [KernelFunction, Description("Parses a document from a stream and extracts text content.")]
+        public string ParseDocument(
+            [Description("The stream containing the document data.")] Stream documentStream,
+            [Description("The name of the file being processed.")] string fileName)
         {
-            _logger.LogInformation("Extracting text from PDF: {FilePath}", filePath);
+            _logger.LogInformation("Parsing document: {FileName}", fileName);
 
-            if (!File.Exists(filePath))
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            if (extension != ".pdf")
             {
-                _logger.LogError("File not found at '{FilePath}'", filePath);
-                return $"Error: File not found at '{filePath}'.";
+                _logger.LogWarning("Unsupported document type: {FileName}", fileName);
+                return $"Unsupported document type: {extension}. This function currently only supports PDF files.";
             }
 
             try
             {
-                // Set the license key if you have one (for IronPDF)
-                // License.LicenseKey = "YOUR_IRONPDF_LICENSE_KEY";
+                using var memoryStream = new MemoryStream();
+                documentStream.CopyTo(memoryStream);
+                memoryStream.Position = 0;
 
-                PdfDocument pdfDocument = PdfDocument.FromFile(filePath, password);
+                var pdfDocument = new PdfDocument(memoryStream);
                 var text = pdfDocument.ExtractAllText();
-                _logger.LogInformation("Successfully extracted text from PDF: {FilePath}", filePath);
+                _logger.LogInformation("Successfully extracted text from PDF: {FileName}", fileName);
                 return text;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while parsing the PDF: {FilePath}", filePath);
-                // Check if the exception message indicates a password error. This is a more robust way to handle it.
-                if (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
-                {
-                    return "Error: The provided password was incorrect, or the PDF is encrypted and no password was provided.";
-                }
-                return $"An unexpected error occurred while parsing the PDF: {ex.Message}";
+                _logger.LogError(ex, "An error occurred while parsing the document: {FileName}", fileName);
+                return $"An unexpected error occurred while parsing the document: {ex.Message}";
             }
         }
     }

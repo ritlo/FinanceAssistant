@@ -1,33 +1,82 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @inject FinanceTracker.Web.Services.AgentApiClient AgentApiClient
+@inject FinanceTracker.Web.Services.TransactionApiClient TransactionApiClient
 @inject ILogger<Home> Logger
 
-<PageTitle>AI Finance Assistant</PageTitle>
+<PageTitle>Finance Assistant</PageTitle>
 
-<h1>AI Finance Assistant</h1>
+<div class="finance-dashboard">
+    <div class="main-content">
+        <div class="header">
+            <h1>Finance Assistant</h1>
+        </div>
 
-<div class="chat-container">
-    <div class="messages">
-        @foreach (var message in messages)
-        {
-            <div class="@(message.IsUser ? "user-message" : "agent-message")">
-                <p>@message.Text</p>
+        <div class="summary-section">
+            <h2>August</h2>
+            <div class="expense-bars">
+                @if (summaryItems.Any())
+                {
+                    @foreach (var item in summaryItems)
+                    {
+                        <div class="expense-item">
+                            <div class="expense-label">@item.Category</div>
+                            <div class="expense-bar-container">
+                                <div class="expense-bar" style="width: @(GetExpensePercentage(item.TotalAmount))%;"></div>
+                            </div>
+                            <div class="expense-amount">$@item.TotalAmount.ToString("F2")</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No expenses recorded for this month.</p>
+                }
             </div>
-        }
-        @if (isLoading)
-        {
-            <div class="agent-message">
-                <p>Agent is thinking...</p>
-            </div>
-        }
-    </div>
+        </div>
 
-    <div class="input-area">
-        <EditForm Model="@chatInput" OnValidSubmit="SendMessage" FormName="chat-form">
-            <InputText @bind-Value="chatInput.UserInput" placeholder="Ask your finance assistant..." class="form-control" />
-            <button type="submit" disabled="@isLoading">Send</button>
-        </EditForm>
+        <div class="cards-section">
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">📅</span>
+                    <h3>Payments</h3>
+                </div>
+                <p>Pay electricity bill tomorrow</p>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">📄</span>
+                    <h3>Notes</h3>
+                </div>
+                <p>Scan credit card statement</p>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <div class="messages">
+                @foreach (var message in messages)
+                {
+                    <div class="@(message.IsUser ? "user-message" : "agent-message")">
+                        <p>@message.Text</p>
+                    </div>
+                }
+                @if (isLoading)
+                {
+                    <div class="agent-message">
+                        <p>Agent is thinking...</p>
+                    </div>
+                }
+            </div>
+            <div class="input-area">
+                <InputFile OnChange="HandleFileSelected" class="upload-button" />
+                <EditForm Model="@chatInput" OnValidSubmit="SendMessage" FormName="chat-form">
+                    <InputText @bind-Value="chatInput.UserInput" placeholder="Ask FinanceAssistant..." class="form-control" />
+                    <button type="submit" disabled="@isLoading">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </EditForm>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -35,7 +84,37 @@
     [SupplyParameterFromForm]
     private ChatInputModel chatInput { get; set; } = new();
     private List<ChatMessage> messages = new List<ChatMessage>();
+    private List<FinanceTracker.Web.Models.MonthlySummaryItem> summaryItems = new List<FinanceTracker.Web.Models.MonthlySummaryItem>();
     private bool isLoading = false;
+    private decimal maxExpense = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMonthlySummary();
+    }
+
+    private async Task LoadMonthlySummary()
+    {
+        try
+        {
+            summaryItems = await TransactionApiClient.GetMonthlySummary();
+            if (summaryItems.Any())
+            {
+                maxExpense = summaryItems.Max(item => item.TotalAmount);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading monthly summary.");
+        }
+    }
+
+    private double GetExpensePercentage(decimal amount)
+    {
+        if (maxExpense == 0) return 0;
+        return (double)(amount / maxExpense) * 100;
+    }
 
     private async Task SendMessage()
     {
@@ -43,13 +122,11 @@
             return;
 
         var currentInput = chatInput.UserInput;
-        Logger.LogInformation("User input: {Input}", currentInput);
         messages.Add(new ChatMessage { Text = currentInput, IsUser = true });
         chatInput.UserInput = "";
         isLoading = true;
         StateHasChanged();
 
-        // Streaming logic
         var agentMessage = new ChatMessage { Text = string.Empty, IsUser = false };
         messages.Add(agentMessage);
         try
@@ -61,14 +138,12 @@
             },
             error =>
             {
-                Logger.LogError("Streaming error: {Error}", error);
                 agentMessage.Text += $"\n[Error]: {error}";
                 InvokeAsync(StateHasChanged);
             });
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An unexpected error occurred during streaming.");
             agentMessage.Text += $"\n[Error]: {ex.Message}";
         }
         finally
@@ -78,6 +153,27 @@
         }
     }
 
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AgentApiClient.UploadDocument(e.File);
+            messages.Add(new ChatMessage { Text = "File uploaded and processed successfully!", IsUser = false });
+            await LoadMonthlySummary(); // Refresh summary after upload
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage { Text = $"Error uploading file: {ex.Message}", IsUser = false });
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
 
     private class ChatMessage
     {
@@ -90,81 +186,3 @@
         public string UserInput { get; set; } = string.Empty;
     }
 }
-
-<style>
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        height: 600px; /* Adjust as needed */
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-    }
-
-    .messages {
-        flex-grow: 1;
-        padding: 15px;
-        overflow-y: auto;
-        background-color: #f9f9f9;
-    }
-
-    .user-message {
-        text-align: right;
-        margin-bottom: 10px;
-    }
-
-    .user-message p {
-        background-color: #dcf8c6;
-        color: #333;
-        padding: 8px 12px;
-        border-radius: 15px;
-        display: inline-block;
-        max-width: 70%;
-    }
-
-    .agent-message {
-        text-align: left;
-        margin-bottom: 10px;
-    }
-
-    .agent-message p {
-        background-color: #e0e0e0;
-        color: #333;
-        padding: 8px 12px;
-        border-radius: 15px;
-        display: inline-block;
-        max-width: 70%;
-    }
-
-    .input-area {
-        display: flex;
-        padding: 15px;
-        border-top: 1px solid #ccc;
-        background-color: #fff;
-    }
-
-    .input-area input {
-        flex-grow: 1;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        margin-right: 10px;
-        font-size: 16px;
-    }
-
-    .input-area button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 10px 20px;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    .input-area button:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-    }
-</style>
