@@ -55,10 +55,19 @@ namespace FinanceTracker.ApiService.Services
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
+            var systemPrompt = """
+                You are a financial assistant. Your goal is to help users with their finances.
+                You can record transactions, retrieve transaction history, and provide financial summaries.
+                Be concise and clear in your responses.
+                """;
+
+            var chatHistory = new ChatHistory(systemPrompt);
+            chatHistory.AddUserMessage(userRequest);
+
             try
             {
                 _logger.LogInformation("Invoking prompt with user request: {Request}", userRequest);
-                var result = await _kernel.InvokePromptAsync(userRequest, arguments);
+                var result = await _kernel.InvokeAsync(new(chatHistory), arguments);
                 _logger.LogInformation("Successfully received response from LLM.");
                 return result.GetValue<string>() ?? "I'm sorry, I couldn't process your request.";
             }
@@ -81,8 +90,17 @@ namespace FinanceTracker.ApiService.Services
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
+            var systemPrompt = """
+                You are a financial assistant. Your goal is to help users with their finances.
+                You can record transactions, retrieve transaction history, and provide financial summaries.
+                Be concise and clear in your responses.
+                """;
+
+            var chatHistory = new ChatHistory(systemPrompt);
+            chatHistory.AddUserMessage(userRequest);
+
             _logger.LogInformation("Streaming prompt with user request: {Request}", userRequest);
-            var resultStream = _kernel.InvokePromptStreamingAsync(userRequest, arguments);
+            var resultStream = _kernel.InvokeStreamingAsync<StreamingChatMessageContent>(new(chatHistory), arguments);
             await foreach (var update in resultStream)
             {
                 var content = update.ToString();
