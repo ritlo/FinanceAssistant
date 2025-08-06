@@ -5,6 +5,7 @@ using System.IO;
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Configuration;
 
 namespace FinanceTracker.Web.Services
 {
@@ -12,20 +13,28 @@ namespace FinanceTracker.Web.Services
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<AgentApiClient> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AgentApiClient(HttpClient httpClient, ILogger<AgentApiClient> logger)
+        public AgentApiClient(HttpClient httpClient, ILogger<AgentApiClient> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task<string> ProcessAgentRequest(string prompt)
         {
             try
             {
+                var request = new AgentRequest
+                {
+                    Prompt = prompt,
+                    UserId = _configuration["UserId"]
+                };
+
                 _logger.LogInformation("Sending request to API with prompt: {Prompt}", prompt);
 
-                var response = await _httpClient.PostAsJsonAsync("/api/agent/process", prompt);
+                var response = await _httpClient.PostAsJsonAsync("/api/agent/process", request);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -54,11 +63,17 @@ namespace FinanceTracker.Web.Services
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Post, "/api/agent/stream-process")
+                var request = new AgentRequest
                 {
-                    Content = JsonContent.Create(prompt)
+                    Prompt = prompt,
+                    UserId = _configuration["UserId"]
                 };
-                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/agent/stream-process")
+                {
+                    Content = JsonContent.Create(request)
+                };
+                using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
@@ -99,6 +114,7 @@ namespace FinanceTracker.Web.Services
                 using var content = new MultipartFormDataContent();
                 using var fileStream = file.OpenReadStream(file.Size);
                 content.Add(new StreamContent(fileStream), "file", file.Name);
+                content.Add(new StringContent(_configuration["UserId"]), "userId");
 
                 var response = await _httpClient.PostAsync("/api/agent/upload", content);
 
@@ -117,5 +133,11 @@ namespace FinanceTracker.Web.Services
                 throw;
             }
         }
+    }
+
+    public class AgentRequest
+    {
+        public string? Prompt { get; set; }
+        public string? UserId { get; set; }
     }
 }

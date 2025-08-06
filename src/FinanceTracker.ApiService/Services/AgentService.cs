@@ -44,7 +44,6 @@ namespace FinanceTracker.ApiService.Services
 
         public async Task<string> ProcessUserRequestAsync(string userRequest, string userId)
         {
-            // Add user ID to the kernel arguments for plugins to access
             var arguments = new KernelArguments
             {
                 ["userId"] = userId
@@ -53,28 +52,30 @@ namespace FinanceTracker.ApiService.Services
             // Enable planning and function calling
             var promptExecutionSettings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             };
 
-            var systemPrompt = """
+            var systemPrompt = $"""
                 You are a financial assistant. Your goal is to help users with their finances.
                 You can record transactions, retrieve transaction history, and provide financial summaries.
                 Be concise and clear in your responses.
+                The current date is {DateTime.UtcNow:yyyy-MM-dd}.
                 """;
 
             var chatHistory = new ChatHistory(systemPrompt);
             chatHistory.AddUserMessage(userRequest);
 
+            arguments["request"] = userRequest;
+
             try
             {
                 _logger.LogInformation("Invoking prompt with user request: {Request}", userRequest);
-                var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
-                var result = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: promptExecutionSettings, kernel: _kernel);
+                var result = await _kernel.InvokePromptAsync(systemPrompt + "\nUser: {{$request}}", arguments);
                 _logger.LogInformation("Successfully received response from LLM.");
 
                 // The response from the LLM might include a tool call to the FinancialPlugin.
                 // The kernel will automatically invoke the tool and the result will be in the content.
-                return result.Content ?? "I'm sorry, I couldn't process your request.";
+                return result.GetValue<string>() ?? "I'm sorry, I couldn't process your request.";
             }
             catch (Exception ex)
             {
@@ -92,28 +93,26 @@ namespace FinanceTracker.ApiService.Services
 
             var promptExecutionSettings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             };
 
-            var systemPrompt = """
+            var systemPrompt = $"""
                 You are a financial assistant. Your goal is to help users with their finances.
                 You can record transactions, retrieve transaction history, and provide financial summaries.
                 Be concise and clear in your responses.
+                The current date is {DateTime.UtcNow:yyyy-MM-dd}.
                 """;
 
             var chatHistory = new ChatHistory(systemPrompt);
             chatHistory.AddUserMessage(userRequest);
 
+            arguments["request"] = userRequest;
+
             _logger.LogInformation("Streaming prompt with user request: {Request}", userRequest);
-            var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
-            var resultStream = chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory, executionSettings: promptExecutionSettings, kernel: _kernel);
+            var resultStream = _kernel.InvokePromptStreamingAsync(systemPrompt + "\nUser: {{$request}}", arguments);
             await foreach (var update in resultStream)
             {
-                var content = update.Content;
-                if (!string.IsNullOrEmpty(content))
-                {
-                    yield return content;
-                }
+                yield return update.ToString();
             }
         }
 

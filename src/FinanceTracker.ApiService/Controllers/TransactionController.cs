@@ -16,9 +16,12 @@ namespace FinanceTracker.ApiService.Controllers
         }
 
         [HttpGet("summary/monthly")]
-        public IActionResult GetMonthlySummary()
+        public IActionResult GetMonthlySummary([FromQuery] string userId)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "testUser123";
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return BadRequest("User ID cannot be empty.");
+            }
             var summary = _transactionService.GetMonthlySummary(userId);
             return Ok(summary);
         }

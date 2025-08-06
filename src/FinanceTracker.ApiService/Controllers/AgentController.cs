@@ -22,19 +22,21 @@ namespace FinanceTracker.ApiService.Controllers
         }
 
         [HttpPost("process")]
-        public async Task<IActionResult> ProcessRequest([FromBody] string prompt)
+        public async Task<IActionResult> ProcessRequest([FromBody] AgentRequest request)
         {
-            if (string.IsNullOrWhiteSpace(prompt))
+            if (string.IsNullOrWhiteSpace(request.Prompt))
             {
                 return BadRequest("Prompt cannot be empty.");
             }
 
-            // TODO: Replace with real authentication
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "testUser123";
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                return BadRequest("User ID cannot be empty.");
+            }
 
             try
             {
-                var result = await _agentService.ProcessUserRequestAsync(prompt, userId);
+                var result = await _agentService.ProcessUserRequestAsync(request.Prompt, request.UserId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -45,21 +47,27 @@ namespace FinanceTracker.ApiService.Controllers
         }
 
         [HttpPost("stream-process")]
-        public async Task StreamProcessRequest([FromBody] string prompt)
+        public async Task StreamProcessRequest([FromBody] AgentRequest request)
         {
-            if (string.IsNullOrWhiteSpace(prompt))
+            if (string.IsNullOrWhiteSpace(request.Prompt))
             {
                 Response.StatusCode = 400;
                 await Response.WriteAsync("Prompt cannot be empty.");
                 return;
             }
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "testUser123";
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                Response.StatusCode = 400;
+                await Response.WriteAsync("User ID cannot be empty.");
+                return;
+            }
+
             Response.ContentType = "text/event-stream";
 
             try
             {
-                await foreach (var chunk in _agentService.StreamUserRequestAsync(prompt, userId))
+                await foreach (var chunk in _agentService.StreamUserRequestAsync(request.Prompt, request.UserId))
                 {
                     await Response.WriteAsync($"data: {chunk}\n\n");
                     await Response.Body.FlushAsync();
@@ -73,14 +81,17 @@ namespace FinanceTracker.ApiService.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadDocument(IFormFile file)
+        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file, [FromForm] string userId)
         {
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File is not provided or empty.");
             }
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "testUser123";
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return BadRequest("User ID cannot be empty.");
+            }
 
             try
             {
@@ -96,5 +107,11 @@ namespace FinanceTracker.ApiService.Controllers
                 return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
             }
         }
+    }
+
+    public class AgentRequest
+    {
+        public string? Prompt { get; set; }
+        public string? UserId { get; set; }
     }
 }
