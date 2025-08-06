@@ -5,6 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using System.IO;
+using System.Collections.Generic;
+using FinanceTracker.ApiService.Data;
 
 namespace FinanceTracker.ApiService.Services
 {
@@ -87,6 +90,29 @@ namespace FinanceTracker.ApiService.Services
                 {
                     yield return content;
                 }
+            }
+        }
+
+        public async Task ProcessDocumentStreamAsync(Stream documentStream, string userId, string fileName)
+        {
+            _logger.LogInformation("Processing document {FileName} for user {UserId}", fileName, userId);
+
+            var arguments = new KernelArguments
+            {
+                ["userId"] = userId,
+                ["documentStream"] = documentStream,
+                ["fileName"] = fileName
+            };
+
+            try
+            {
+                var result = await _kernel.InvokeAsync("DocumentParsingPlugin", "ParseDocument", arguments);
+                _logger.LogInformation("Document {FileName} processed successfully.", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing document {FileName}.", fileName);
+                throw;
             }
         }
     }
