@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.12.1" />
     <PackageReference Include="MudBlazor" Version="8.11.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.8" />
   </ItemGroup>
 
 </Project>

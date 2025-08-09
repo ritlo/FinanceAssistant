@@ -87,6 +87,9 @@
     </div>
 </div>
 
+
+@using Microsoft.AspNetCore.SignalR.Client
+
 @code {
 
     [SupplyParameterFromForm]
@@ -100,7 +103,8 @@
     private int currentYear = DateTime.Now.Year;
     private static readonly Dictionary<string, string> categoryGradients = new()
     {
-        { "Food", "linear-gradient(90deg, #ff5f6d, #845ec2)" },
+        { "Food and Drinks", "linear-gradient(90deg, #ff5f6d, #845ec2)" },
+        { "Groceries", "linear-gradient(90deg, #f7971e, #ffd200)" },
         { "Rent", "linear-gradient(90deg, #f9d423, #ff4e50)" },
         { "Shopping", "linear-gradient(90deg, #43cea2, #185a9d)" },
         { "Entertainment", "linear-gradient(90deg, #30cfd0, #330867)" },
@@ -108,9 +112,39 @@
         // Add more as needed
     };
 
+
+    private HubConnection? _hubConnection;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadMonthlySummary();
+        await InitializeSignalR();
+    }
+
+    private async Task InitializeSignalR()
+    {
+        var baseUrl = TransactionApiClient?.GetBaseUrl?.Invoke() ?? "http://localhost:5409/";
+        var hubUrl = baseUrl.TrimEnd('/') + "/transactionHub";
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl)
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On("TransactionChanged", async () =>
+        {
+            await LoadMonthlySummary();
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await _hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
     }
 
     private string CurrentMonthYear => new DateTime(currentYear, currentMonth, 1).ToString("MMMM yyyy");

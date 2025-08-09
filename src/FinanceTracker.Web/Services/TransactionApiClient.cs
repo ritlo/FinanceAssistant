@@ -19,6 +19,8 @@ namespace FinanceTracker.Web.Services
             _configuration = configuration;
         }
 
+        public Func<string>? GetBaseUrl => () => _httpClient.BaseAddress?.ToString() ?? _configuration["ApiServiceBaseUrl"] ?? "http://localhost:5409/";
+
         public async Task<List<Transaction>> GetTransactions()
         {
             var userId = _configuration["UserId"];

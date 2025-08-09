@@ -1,5 +1,10 @@
 using FinanceTracker.ApiService.Data;
 using FinanceTracker.ApiService.Services;
+using Microsoft.AspNetCore.SignalR;
+
+
+using FinanceTracker.ApiService.Hubs;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +20,26 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
+
 // Add services to the container.
 builder.Services.AddProblemDetails();
+builder.Services.AddSignalR();
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
 
 // Configure LiteDB
 var dbPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Data", "FinanceTracker.db");
 builder.Services.AddSingleton<ILiteDbContext>(new LiteDbContext(dbPath));
-builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<TransactionService>(sp =>
+    new TransactionService(
+        sp.GetRequiredService<ILiteDbContext>(),
+        sp.GetRequiredService<ILogger<TransactionService>>(),
+        sp.GetService<IHubContext<TransactionHub>>()
+    )
+);
 builder.Services.AddScoped<AgentService>(); // Register AgentService
 
 builder.Logging.ClearProviders();
@@ -36,7 +54,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
+
 var app = builder.Build();
+app.UseResponseCompression();
 
 // Seed initial categories
 using (var scope = app.Services.CreateScope())
@@ -55,8 +75,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapDefaultEndpoints();
 
+app.MapDefaultEndpoints();
 app.MapControllers();
+app.MapHub<TransactionHub>("/transactionHub");
 
 app.Run();

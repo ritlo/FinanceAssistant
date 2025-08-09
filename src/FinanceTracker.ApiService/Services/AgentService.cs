@@ -84,6 +84,8 @@ namespace FinanceTracker.ApiService.Services
             string systemPrompt =
                 "You are a financial assistant. You can call the following functions if needed. Otherwise, answer in natural language.\n" +
                 "\n" +
+                "IMPORTANT: When logging a transaction, you MUST always categorize it into ONE of the following categories: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, or Transport. Do not use any other category.\n" +
+                "\n" +
                 "FUNCTIONS:\n" +
                 "[\n" +
                 "  {\n" +
@@ -91,7 +93,7 @@ namespace FinanceTracker.ApiService.Services
                 "    \"description\": \"Log a financial transaction for the user.\",\n" +
                 "    \"parameters\": {\n" +
                 "      \"amount\": \"number, required\",\n" +
-                "      \"category\": \"string, required\",\n" +
+                "      \"category\": \"string, required. Must be one of: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, Transport.\",\n" +
                 "      \"description\": \"string, optional\",\n" +
                 "      \"date\": \"string, required, format: YYYY-MM-DD\"\n" +
                 "    }\n" +
@@ -105,13 +107,14 @@ namespace FinanceTracker.ApiService.Services
                 "\n" +
                 "INSTRUCTIONS:\n" +
                 "- If the user wants to log a transaction, respond ONLY with a JSON object: {\"name\": \"LogTransaction\", \"parameters\": {...}}\n" +
+                "- The \"category\" parameter MUST be one of: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, or Transport.\n" +
                 "- If the user wants to see their transactions, respond ONLY with a JSON object: {\"name\": \"ReadTransactions\", \"parameters\": {}}\n" +
                 "- For all other queries, answer in natural language.\n" +
                 "- Do not use markdown, backticks, or extra text when calling a function.\n" +
                 "\n" +
                 "EXAMPLES:\n" +
                 "User: I spent $5 at taco bell today\n" +
-                "Assistant: {\"name\": \"LogTransaction\", \"parameters\": {\"amount\": 5, \"category\": \"Food\", \"description\": \"Taco Bell\", \"date\": \"2025-08-08\"}}\n" +
+                "Assistant: {\"name\": \"LogTransaction\", \"parameters\": {\"amount\": 5, \"category\": \"Food and Drinks\", \"description\": \"Taco Bell\", \"date\": \"2025-08-08\"}}\n" +
                 "User: Show me my recent expenses\n" +
                 "Assistant: {\"name\": \"ReadTransactions\", \"parameters\": {}}\n" +
                 "User: How can I save more money?\n" +
@@ -183,6 +186,8 @@ namespace FinanceTracker.ApiService.Services
             string systemPrompt =
                 "You are a financial assistant. You can call the following functions if needed. Otherwise, answer in natural language.\n" +
                 "\n" +
+                "IMPORTANT: When logging a transaction, you MUST always categorize it into ONE of the following categories: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, or Transport. Do not use any other category.\n" +
+                "\n" +
                 "FUNCTIONS:\n" +
                 "[\n" +
                 "  {\n" +
@@ -190,7 +195,7 @@ namespace FinanceTracker.ApiService.Services
                 "    \"description\": \"Log a financial transaction for the user.\",\n" +
                 "    \"parameters\": {\n" +
                 "      \"amount\": \"number, required\",\n" +
-                "      \"category\": \"string, required\",\n" +
+                "      \"category\": \"string, required. Must be one of: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, Transport.\",\n" +
                 "      \"description\": \"string, optional\",\n" +
                 "      \"date\": \"string, required, format: YYYY-MM-DD\"\n" +
                 "    }\n" +
@@ -204,13 +209,14 @@ namespace FinanceTracker.ApiService.Services
                 "\n" +
                 "INSTRUCTIONS:\n" +
                 "- If the user wants to log a transaction, respond ONLY with a JSON object: {\"name\": \"LogTransaction\", \"parameters\": {...}}\n" +
+                "- The \"category\" parameter MUST be one of: Food and Drinks, Groceries, Shopping, Travel, Services, Entertainment, Health, or Transport.\n" +
                 "- If the user wants to see their transactions, respond ONLY with a JSON object: {\"name\": \"ReadTransactions\", \"parameters\": {}}\n" +
                 "- For all other queries, answer in natural language.\n" +
                 "- Do not use markdown, backticks, or extra text when calling a function.\n" +
                 "\n" +
                 "EXAMPLES:\n" +
                 "User: I spent $5 at taco bell today\n" +
-                "Assistant: {\"name\": \"LogTransaction\", \"parameters\": {\"amount\": 5, \"category\": \"Food\", \"description\": \"Taco Bell\", \"date\": \"2025-08-08\"}}\n" +
+                "Assistant: {\"name\": \"LogTransaction\", \"parameters\": {\"amount\": 5, \"category\": \"Food and Drinks\", \"description\": \"Taco Bell\", \"date\": \"2025-08-08\"}}\n" +
                 "User: Show me my recent expenses\n" +
                 "Assistant: {\"name\": \"ReadTransactions\", \"parameters\": {}}\n" +
                 "User: How can I save more money?\n" +
