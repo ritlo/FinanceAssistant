@@ -1,3 +1,4 @@
+        // ...existing code...
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -18,10 +19,18 @@ namespace FinanceTracker.Web.Services
             _configuration = configuration;
         }
 
-        public async Task<List<MonthlySummaryItem>> GetMonthlySummary()
+        public async Task<List<Transaction>> GetTransactions()
         {
             var userId = _configuration["UserId"];
-            return await _httpClient.GetFromJsonAsync<List<MonthlySummaryItem>>($"api/transactions/summary/monthly?userId={userId}") ?? new List<MonthlySummaryItem>();
+            var url = $"api/transactions?userId={userId}";
+            return await _httpClient.GetFromJsonAsync<List<Transaction>>(url) ?? new List<Transaction>();
+        }
+
+        public async Task<List<MonthlySummaryItem>> GetMonthlySummary(int month, int year)
+        {
+            var userId = _configuration["UserId"];
+            var url = $"api/transactions/summary/monthly?userId={userId}&month={month}&year={year}";
+            return await _httpClient.GetFromJsonAsync<List<MonthlySummaryItem>>(url) ?? new List<MonthlySummaryItem>();
         }
     }
 }

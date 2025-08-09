@@ -1,20 +1,26 @@
 using FinanceTracker.Web;
 using FinanceTracker.Web.Components;
 using FinanceTracker.Web.Services; // Add this using directive
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+
+// Register MudBlazor services
+builder.Services.AddMudServices();
+
 builder.Services.AddOutputCache();
 
-// Register AgentApiClient
-builder.Services.AddHttpClient<AgentApiClient>(client =>
+// Register AgentApiClient as IAgentApiClient for DI abstraction
+builder.Services.AddHttpClient<IAgentApiClient, AgentApiClient>(client =>
 {
     client.BaseAddress = new("http://apiservice"); // apiService is the name of our backend project in Aspire
     client.Timeout = TimeSpan.FromMinutes(5); // Set a longer timeout for streaming

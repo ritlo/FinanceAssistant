@@ -1,6 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
-@inject FinanceTracker.Web.Services.AgentApiClient AgentApiClient
+@inject FinanceTracker.Web.Services.IAgentApiClient AgentApiClient
 @inject FinanceTracker.Web.Services.TransactionApiClient TransactionApiClient
 @inject ILogger<Home> Logger
 
@@ -8,49 +8,56 @@
 
 <div class="finance-dashboard">
     <div class="main-content">
+
         <div class="header">
             <h1>Finance Assistant</h1>
         </div>
 
-        <div class="summary-section">
-            <h2>August</h2>
-            <div class="expense-bars">
-                @if (summaryItems.Any())
+        <MudGrid AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6">
+            <MudItem xs="1" sm="1" md="1" lg="1" xl="1" Class="d-flex justify-start">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Color="Color.Primary" Size="Size.Large" OnClick="PrevMonth" aria-label="Previous Month" />
+            </MudItem>
+            <MudItem xs="10" sm="10" md="10" lg="10" xl="10" Class="d-flex justify-center">
+                <MudText Typo="Typo.h4" Class="font-weight-bold">@CurrentMonthYear</MudText>
+            </MudItem>
+            <MudItem xs="1" sm="1" md="1" lg="1" xl="1" Class="d-flex justify-end">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Primary" Size="Size.Large" OnClick="NextMonth" aria-label="Next Month" />
+            </MudItem>
+        </MudGrid>
+        <div class="expense-bars mb-6">
+            @if (summaryItems.Any())
+            {
+                @foreach (var item in summaryItems)
                 {
-                    @foreach (var item in summaryItems)
-                    {
-                        <div class="expense-item">
-                            <div class="expense-label">@item.Category</div>
-                            <div class="expense-bar-container">
-                                <div class="expense-bar" style="width: @(GetExpensePercentage(item.TotalAmount))%;"></div>
-                            </div>
-                            <div class="expense-amount">$@item.TotalAmount.ToString("F2")</div>
+                    <div class="expense-item">
+                        <div class="expense-label">@item.Category</div>
+                        <div class="expense-bar-container">
+                            <div class="expense-bar" style="width: @(GetExpensePercentage(item.TotalAmount))%; background: @(GetBarGradient(item.Category));"></div>
                         </div>
-                    }
+                        <div class="expense-amount">$@item.TotalAmount.ToString("F2")</div>
+                    </div>
                 }
-                else
-                {
-                    <p>No expenses recorded for this month.</p>
-                }
-            </div>
+            }
+            else
+            {
+                <p>No expenses recorded for this month.</p>
+            }
         </div>
 
-        <div class="cards-section">
-            <div class="card">
-                <div class="card-header">
-                    <span class="icon">📅</span>
-                    <h3>Payments</h3>
-                </div>
-                <p>Pay electricity bill tomorrow</p>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <span class="icon">📄</span>
-                    <h3>Notes</h3>
-                </div>
-                <p>Scan credit card statement</p>
-            </div>
-        </div>
+        <MudGrid Spacing="3" Class="mb-6">
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="1" Class="pa-4" Style="background:#23272f; color:#fff;">
+                    <MudText Typo="Typo.h6" Class="mb-2"><MudIcon Icon="@Icons.Material.Filled.Payments" Class="mr-2" />Payments</MudText>
+                    <MudText>Pay electricity bill tomorrow</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="1" Class="pa-4" Style="background:#23272f; color:#fff;">
+                    <MudText Typo="Typo.h6" Class="mb-2"><MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" />Notes</MudText>
+                    <MudText>Scan credit card statement</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
 
         <div class="chat-section">
             <div class="messages">
@@ -81,6 +88,7 @@
 </div>
 
 @code {
+
     [SupplyParameterFromForm]
     private ChatInputModel chatInput { get; set; } = new();
     private List<ChatMessage> messages = new List<ChatMessage>();
@@ -88,19 +96,37 @@
     private bool isLoading = false;
     private decimal maxExpense = 0;
 
+    private int currentMonth = DateTime.Now.Month;
+    private int currentYear = DateTime.Now.Year;
+    private static readonly Dictionary<string, string> categoryGradients = new()
+    {
+        { "Food", "linear-gradient(90deg, #ff5f6d, #845ec2)" },
+        { "Rent", "linear-gradient(90deg, #f9d423, #ff4e50)" },
+        { "Shopping", "linear-gradient(90deg, #43cea2, #185a9d)" },
+        { "Entertainment", "linear-gradient(90deg, #30cfd0, #330867)" },
+        { "Transport", "linear-gradient(90deg, #36d1c4, #5b86e5)" },
+        // Add more as needed
+    };
+
     protected override async Task OnInitializedAsync()
     {
         await LoadMonthlySummary();
     }
 
+    private string CurrentMonthYear => new DateTime(currentYear, currentMonth, 1).ToString("MMMM yyyy");
+
     private async Task LoadMonthlySummary()
     {
         try
         {
-            summaryItems = await TransactionApiClient.GetMonthlySummary();
+            summaryItems = await TransactionApiClient.GetMonthlySummary(currentMonth, currentYear);
             if (summaryItems.Any())
             {
                 maxExpense = summaryItems.Max(item => item.TotalAmount);
+            }
+            else
+            {
+                maxExpense = 0;
             }
             StateHasChanged();
         }
@@ -110,10 +136,45 @@
         }
     }
 
+    private void PrevMonth()
+    {
+        if (currentMonth == 1)
+        {
+            currentMonth = 12;
+            currentYear--;
+        }
+        else
+        {
+            currentMonth--;
+        }
+        _ = LoadMonthlySummary();
+    }
+
+    private void NextMonth()
+    {
+        if (currentMonth == 12)
+        {
+            currentMonth = 1;
+            currentYear++;
+        }
+        else
+        {
+            currentMonth++;
+        }
+        _ = LoadMonthlySummary();
+    }
+
     private double GetExpensePercentage(decimal amount)
     {
         if (maxExpense == 0) return 0;
         return (double)(amount / maxExpense) * 100;
+    }
+
+    private string GetBarGradient(string category)
+    {
+        if (categoryGradients.TryGetValue(category, out var gradient))
+            return gradient;
+        return "linear-gradient(90deg, #b2fefa, #0ed2f7)";
     }
 
     private async Task SendMessage()
@@ -131,7 +192,7 @@
         messages.Add(agentMessage);
         try
         {
-            await AgentApiClient.StreamAgentRequestStream(currentInput, chunk =>
+            await AgentApiClient.StreamAgentRequestStreamAsync(currentInput, chunk =>
             {
                 agentMessage.Text += chunk;
                 InvokeAsync(StateHasChanged);
@@ -160,9 +221,16 @@
 
         try
         {
-            await AgentApiClient.UploadDocument(e.File);
-            messages.Add(new ChatMessage { Text = "File uploaded and processed successfully!", IsUser = false });
-            await LoadMonthlySummary(); // Refresh summary after upload
+            var uploadResult = await AgentApiClient.UploadDocumentAsync(e.File);
+            if (uploadResult.Success)
+            {
+                messages.Add(new ChatMessage { Text = "File uploaded and processed successfully!", IsUser = false });
+                await LoadMonthlySummary(); // Refresh summary after upload
+            }
+            else
+            {
+                messages.Add(new ChatMessage { Text = $"Error uploading file: {uploadResult.ErrorMessage}", IsUser = false });
+            }
         }
         catch (Exception ex)
         {

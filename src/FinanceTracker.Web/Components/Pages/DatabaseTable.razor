@@ -1,0 +1,109 @@
+@page "/database"
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+
+<h1>Database Transactions</h1>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else if (transactions.Count == 0)
+{
+    <p>No transactions found.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in transactions)
+            {
+                <tr>
+                    <td>@t.Date</td>
+                    <td>@t.Description</td>
+                    <td>@t.Amount</td>
+                    <td>@t.Category</td>
+                    <td>@t.Type</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ParsedTransaction> transactions = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            var baseUrl = Configuration["ApiServiceBaseUrl"] ?? "http://localhost:5001/";
+            var userId = Configuration["UserId"] ?? "DefaultUser-1";
+            var url = $"{baseUrl.TrimEnd('/')}/api/transactions?userId={userId}";
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var doc = System.Text.Json.JsonDocument.Parse(json);
+            transactions.Clear();
+            foreach (var element in doc.RootElement.EnumerateArray())
+            {
+                string typeStr = "";
+                if (element.TryGetProperty("type", out var typeElem))
+                {
+                    if (typeElem.ValueKind == System.Text.Json.JsonValueKind.String)
+                        typeStr = typeElem.GetString() ?? "";
+                    else if (typeElem.ValueKind == System.Text.Json.JsonValueKind.Number)
+                        typeStr = typeElem.GetInt32() == 0 ? "Income" : "Expense";
+                }
+                string categoryStr = "";
+                if (element.TryGetProperty("category", out var catElem) && catElem.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    if (catElem.TryGetProperty("name", out var nameElem))
+                        categoryStr = nameElem.GetString() ?? "";
+                }
+                transactions.Add(new ParsedTransaction
+                {
+                    Date = element.TryGetProperty("date", out var dateElem) && dateElem.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? DateTime.TryParse(dateElem.GetString(), out var dt) ? dt.ToShortDateString() : "" : "",
+                    Description = element.TryGetProperty("description", out var descElem) ? descElem.GetString() ?? "" : "",
+                    Amount = element.TryGetProperty("amount", out var amtElem) ? amtElem.GetDecimal().ToString("C2") : "",
+                    Category = categoryStr,
+                    Type = typeStr
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading transactions: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class ParsedTransaction
+    {
+        public string Date { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Amount { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Type { get; set; } = "";
+    }
+}

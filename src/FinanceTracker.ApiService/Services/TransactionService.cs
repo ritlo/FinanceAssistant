@@ -37,6 +37,41 @@ namespace FinanceTracker.ApiService.Services
             _context.Transactions.Insert(transaction);
         }
 
+        // Async method for logging transactions from LLM backend
+        public async Task<bool> LogTransactionAsync(decimal amount, string category, string description, DateTime date, string userId)
+        {
+            try
+            {
+                // Find or create the category
+                var cat = _context.Categories.FindOne(c => c.Name == category);
+                if (cat == null)
+                {
+                    cat = new Category { Name = category, Type = "Expense" };
+                    _context.Categories.Insert(cat);
+                }
+
+                var transaction = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Amount = amount,
+                    Category = cat,
+                    Description = description,
+                    Date = date,
+                    Type = TransactionType.Expense // Default to Expense; can be extended
+                };
+                _logger.LogInformation("[LLM][DB] Logging transaction for user {UserId}: {Amount} {Category} {Description} {Date}", userId, amount, category, description, date);
+                _context.Transactions.Insert(transaction);
+                await Task.CompletedTask;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[LLM][DB] Failed to log transaction for user {UserId}", userId);
+                return false;
+            }
+        }
+
         public void UpdateTransaction(Transaction transaction)
         {
             _logger.LogInformation("Updating transaction {TransactionId} for user {UserId}", transaction.Id, transaction.UserId);
@@ -83,12 +118,31 @@ namespace FinanceTracker.ApiService.Services
             }
         }
 
-        public IEnumerable<MonthlySummaryItem> GetMonthlySummary(string userId)
+        public IEnumerable<MonthlySummaryItem> GetMonthlySummary(string userId, int? month = null, int? year = null)
         {
-            _logger.LogInformation("Getting monthly summary for user {UserId}", userId);
+            _logger.LogInformation("Getting monthly summary for user {UserId}, month {Month}, year {Year}", userId, month, year);
 
             var now = DateTime.UtcNow;
-            var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
+            int m = month ?? now.Month;
+            int y = year ?? now.Year;
+
+            // Validate month and year
+            if (m < 1 || m > 12 || y < 1 || y > 9999)
+            {
+                _logger.LogWarning("Invalid month/year for summary: month={Month}, year={Year}", m, y);
+                return Enumerable.Empty<MonthlySummaryItem>();
+            }
+
+            DateTime firstDayOfMonth;
+            try
+            {
+                firstDayOfMonth = new DateTime(y, m, 1);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                _logger.LogError(ex, "Invalid date for summary: month={Month}, year={Year}", m, y);
+                return Enumerable.Empty<MonthlySummaryItem>();
+            }
             var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
             var transactions = _context.Transactions.Find(t =>
@@ -104,6 +158,20 @@ namespace FinanceTracker.ApiService.Services
                 .ToList();
 
             return summary;
+        }
+
+        // Returns the most recent N transactions for a user, sorted by date descending
+
+        public async Task<List<Transaction>> GetRecentTransactionsAsync(string userId, int count = 10)
+        {
+            _logger.LogInformation("Getting recent {Count} transactions for user {UserId}", count, userId);
+            var transactions = _context.Transactions
+                .Find(t => t.UserId == userId)
+                .OrderByDescending(t => t.Date)
+                .Take(count)
+                .ToList();
+            await Task.CompletedTask; // For async signature compatibility
+            return transactions;
         }
     }
 }

@@ -1,3 +1,4 @@
+
 using FinanceTracker.ApiService.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -15,14 +16,25 @@ namespace FinanceTracker.ApiService.Controllers
             _transactionService = transactionService;
         }
 
-        [HttpGet("summary/monthly")]
-        public IActionResult GetMonthlySummary([FromQuery] string userId)
+        [HttpGet]
+        public IActionResult GetTransactions([FromQuery] string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
                 return BadRequest("User ID cannot be empty.");
             }
-            var summary = _transactionService.GetMonthlySummary(userId);
+            var transactions = _transactionService.GetTransactions(userId);
+            return Ok(transactions);
+        }
+
+        [HttpGet("summary/monthly")]
+        public IActionResult GetMonthlySummary([FromQuery] string userId, [FromQuery] int? month, [FromQuery] int? year)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return BadRequest("User ID cannot be empty.");
+            }
+            var summary = _transactionService.GetMonthlySummary(userId, month, year);
             return Ok(summary);
         }
     }

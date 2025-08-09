@@ -1,0 +1,3 @@
+# To install FluentUI for Blazor, run the following command in your project directory:
+#
+dotnet add package Microsoft.FluentUI.AspNetCore.Components
