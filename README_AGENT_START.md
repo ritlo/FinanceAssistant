@@ -24,3 +24,5 @@ dotnet format FinanceAssistant.slnx --verify-no-changes --no-restore
 ## 4. Delivery
 
 Work through `docs/TASK_BACKLOG.md` in order. Every row has one accountable owner; slice owners deliver all affected layers, tests, and documentation in one focused commit. Use the Review & Commit Steward for the risk-based gates defined in `AGENTS.md` and `docs/COMMIT_PLAN.md`.
+
+Use `docs/IMPLEMENTATION_PLAN.md` for the atomic execution steps prepared for lightweight implementation models. Stop at the documented task boundary and commit before starting the next task.
