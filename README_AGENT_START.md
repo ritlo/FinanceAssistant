@@ -1,50 +1,26 @@
 # Agent Start Instructions
 
-Use this sequence to establish the repository before implementation begins.
+## 1. Planning baseline
 
-## 1. Commit the planning pack
+The planning pack is committed before implementation. The Project Lead Agent then approves or revises the architecture in a separate commit.
 
-Review these files in the repository root:
+## 2. Architecture approval
 
-```text
-AGENTS.md
-README_AGENT_START.md
-Directory.Build.props
-Directory.Packages.props
-global.json.template
-.editorconfig
-.gitignore
-docs/
-```
+Read `AGENTS.md` and every file under `docs/`. Inspect the repository and the read-only `./FinanceTracker` reference. Update the decision log, structure, behavior contract, commit plan, and backlog together.
 
-Rename `global.json.template` to `global.json` only after confirming the installed .NET 10 SDK version.
+## 3. Foundation
 
-Create the bootstrap commit before asking the Project Lead Agent to approve the architecture:
+Populate the existing `.NET 10` solution, create the four production projects and five test projects, rename `global.json.template` to `global.json` after confirming the installed SDK, and add the product `README.md`. Follow `docs/PROJECT_STRUCTURE.md` and normalize generated package versions before restore.
+
+Validate locally:
 
 ```bash
-git status
-git add AGENTS.md README_AGENT_START.md docs .editorconfig .gitignore Directory.Build.props Directory.Packages.props global.json.template
-
-git commit -m "Add agent planning pack"
+dotnet restore FinanceAssistant.slnx
+dotnet build FinanceAssistant.slnx --no-restore
+dotnet test FinanceAssistant.slnx --no-build
+dotnet format FinanceAssistant.slnx --verify-no-changes --no-restore
 ```
 
-## 2. Run Project Lead Agent
+## 4. Delivery
 
-Use the prompt from `docs/PROMPTS_FOR_AGENTS.md`.
-
-The Project Lead Agent must approve or update the structure in a separate planning commit before implementation begins.
-
-## 3. Create and validate the solution
-
-Create the solution and production projects first. Add the test projects and CI workflow together so the first CI run performs both a real build and real tests.
-
-```bash
-dotnet build
-dotnet test
-```
-
-## 4. Begin backlog
-
-Start from `docs/TASK_BACKLOG.md`.
-
-Each completed significant task must be committed.
+Work through `docs/TASK_BACKLOG.md` in vertical slices. Each slice includes its behavior, tests, documentation updates, and focused commit.
