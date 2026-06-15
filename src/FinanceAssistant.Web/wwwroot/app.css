@@ -36,3 +36,93 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #171717;
+    background: #f7f7f4;
+}
+
+.transaction-shell {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+.transaction-entry {
+    display: grid;
+    gap: 22px;
+}
+
+.transaction-entry h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.page-kicker {
+    margin: 6px 0 0;
+    color: #525252;
+}
+
+form {
+    display: grid;
+    gap: 18px;
+}
+
+.transaction-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+label {
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+input,
+select {
+    min-height: 42px;
+    border: 1px solid #c9c9c2;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    color: #171717;
+    font: inherit;
+}
+
+.description-field {
+    max-width: 100%;
+}
+
+button {
+    width: fit-content;
+    min-height: 42px;
+    border: 0;
+    border-radius: 6px;
+    padding: 0 18px;
+    background: #245c49;
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.status-message {
+    margin: 0;
+    color: #245c49;
+    font-weight: 700;
+}
+
+.validation-summary-errors {
+    color: #9b1c1c;
+}
+
+@media (max-width: 760px) {
+    .transaction-grid {
+        grid-template-columns: 1fr;
+    }
+}

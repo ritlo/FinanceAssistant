@@ -1,7 +1,90 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.Finance.Categories
+@using FinanceAssistant.Application.Finance.Categories.ListCategories
+@using FinanceAssistant.Application.Finance.Transactions.LogTransaction
+@using FinanceAssistant.Domain.Finance.Transactions
+@using FinanceAssistant.Web.Finance.Transactions.LogTransaction
+@inject ListCategoriesUseCase ListCategories
+@inject LogTransactionUseCase LogTransaction
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Transactions</PageTitle>
 
-<h1>Hello, world!</h1>
+<main class="transaction-shell">
+    <section class="transaction-entry">
+        <div>
+            <h1>Transactions</h1>
+            <p class="page-kicker">Log income and expenses against deterministic local categories.</p>
+        </div>
 
-Welcome to your new app.
+        <EditForm Model="Form" OnValidSubmit="SubmitAsync" FormName="log-transaction">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="transaction-grid">
+                <label>
+                    <span>Type</span>
+                    <InputSelect @bind-Value="Form.Type">
+                        <option value="@TransactionType.Expense">Expense</option>
+                        <option value="@TransactionType.Income">Income</option>
+                    </InputSelect>
+                </label>
+
+                <label>
+                    <span>Amount</span>
+                    <InputNumber @bind-Value="Form.Amount" />
+                </label>
+
+                <label>
+                    <span>Date</span>
+                    <InputDate @bind-Value="Form.Date" />
+                </label>
+
+                <label>
+                    <span>Category</span>
+                    <InputSelect @bind-Value="Form.CategoryId">
+                        <option value="">Auto</option>
+                        @foreach (var category in Categories.Where(category => category.TransactionType == Form.Type))
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </InputSelect>
+                </label>
+            </div>
+
+            <label class="description-field">
+                <span>Description</span>
+                <InputText @bind-Value="Form.Description" />
+            </label>
+
+            <button type="submit">Log transaction</button>
+        </EditForm>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <p class="status-message">@StatusMessage</p>
+        }
+    </section>
+</main>
+
+@code {
+    private LogTransactionFormModel Form { get; } = new();
+
+    private IReadOnlyList<CategoryResult> Categories { get; set; } = [];
+
+    private string? StatusMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await ListCategories.ExecuteAsync();
+    }
+
+    private async Task SubmitAsync()
+    {
+        var result = await LogTransaction.ExecuteAsync(Form.ToRequest());
+        var category = Categories.Single(item => item.Id == result.CategoryId);
+        StatusMessage = $"Logged {result.Type.ToString().ToLowerInvariant()} {result.Amount:0.00} in {category.Name}.";
+        Form.Description = string.Empty;
+        Form.CategoryId = null;
+    }
+}
