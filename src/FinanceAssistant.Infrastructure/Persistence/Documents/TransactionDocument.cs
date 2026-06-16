@@ -37,7 +37,7 @@ public sealed class TransactionDocument
         };
     }
 
-    public Transaction ToTransaction()
+    public Transaction ToTransaction(Category category)
     {
         return Transaction.Rehydrate(
             new TransactionId(Id),
@@ -46,6 +46,6 @@ public sealed class TransactionDocument
             Enum.Parse<TransactionType>(Type),
             DateOnly.ParseExact(Date, "O"),
             Description,
-            new CategoryId(CategoryId));
+            category);
     }
 }

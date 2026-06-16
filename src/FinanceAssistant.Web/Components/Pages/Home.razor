@@ -139,7 +139,7 @@
                             <span class="transaction-description">@transaction.Description</span>
                             <span class="transaction-category">@transaction.CategoryName</span>
                             <span class="transaction-amount @(transaction.Type == TransactionType.Expense ? "amount-expense" : "amount-income")">
-                                @(transaction.Type == TransactionType.Expense ? "-" : "+")@transaction.Amount:0.00
+                                @($"{(transaction.Type == TransactionType.Expense ? "-" : "+")}{transaction.Amount:0.00}")
                             </span>
                         </div>
                         <div class="transaction-actions">

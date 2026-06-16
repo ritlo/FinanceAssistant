@@ -58,25 +58,8 @@ public sealed class Transaction
         string description,
         Category category)
     {
-        ValidateCategory(profileId, type, category);
-        return Rehydrate(id, profileId, amount, type, date, description, category.Id);
-    }
-
-    public static Transaction Rehydrate(
-        TransactionId id,
-        LocalProfileId profileId,
-        Money amount,
-        TransactionType type,
-        DateOnly date,
-        string description,
-        CategoryId categoryId)
-    {
         ValidateDate(date);
-
-        if (categoryId.Value == Guid.Empty)
-        {
-            throw new DomainValidationException("Transaction category is required.");
-        }
+        ValidateCategory(profileId, type, category);
 
         return new Transaction(
             id,
@@ -85,7 +68,7 @@ public sealed class Transaction
             type,
             date,
             RequiredText.Normalize(description, "Transaction description"),
-            categoryId);
+            category.Id);
     }
 
     public void Update(Money amount, TransactionType type, DateOnly date, string description, Category category)
