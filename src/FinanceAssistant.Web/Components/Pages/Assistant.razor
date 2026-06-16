@@ -1,7 +1,10 @@
 @page "/assistant"
 @rendermode InteractiveServer
 @using FinanceAssistant.Application.Assistant
+@using FinanceAssistant.Application.Assistant.ProcessMessage
+@using FinanceAssistant.Domain.Common
 @inject IAssistantModelClient AssistantModelClient
+@inject ProcessAssistantMessageUseCase ProcessAssistantMessage
 
 <PageTitle>Assistant</PageTitle>
 
@@ -32,13 +35,75 @@
             <p class="validation-message">@Disclosure.WarningMessage</p>
         }
     </section>
+
+    <section class="assistant-status">
+        <form class="assistant-message-form" @onsubmit="SendAsync" @onsubmit:preventDefault="true">
+            <label>
+                <span>Message</span>
+                <textarea @bind="Message" rows="4"></textarea>
+            </label>
+            <button type="submit">Send</button>
+        </form>
+
+        @if (Result is not null)
+        {
+            <article class="assistant-confirmation-preview">
+                <h2>@(Result.ToolName ?? "Assistant")</h2>
+                <p class="@(Result.Succeeded ? "status-message" : "validation-message")">@Result.Message</p>
+
+                @if (Result.RequiresConfirmation)
+                {
+                    <dl class="assistant-config">
+                        <div>
+                            <dt>Token</dt>
+                            <dd>@Result.ConfirmationToken</dd>
+                        </div>
+                        <div>
+                            <dt>Fingerprint</dt>
+                            <dd>@Result.OperationFingerprint</dd>
+                        </div>
+                    </dl>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Result.PayloadJson))
+                {
+                    <pre>@Result.PayloadJson</pre>
+                }
+            </article>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <p class="validation-message">@ErrorMessage</p>
+        }
+    </section>
 </main>
 
 @code {
     private AssistantConfigurationDisclosure Disclosure { get; set; } = default!;
 
+    private string Message { get; set; } = string.Empty;
+
+    private ProcessAssistantMessageResult? Result { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
     protected override void OnInitialized()
     {
         Disclosure = AssistantModelClient.GetConfigurationDisclosure();
+    }
+
+    private async Task SendAsync()
+    {
+        try
+        {
+            Result = await ProcessAssistantMessage.ExecuteAsync(new ProcessAssistantMessageRequest(Message));
+            ErrorMessage = null;
+        }
+        catch (DomainValidationException exception)
+        {
+            Result = null;
+            ErrorMessage = exception.Message;
+        }
     }
 }
