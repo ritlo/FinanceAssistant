@@ -2,7 +2,9 @@ using System.Text;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.CreateDocumentRecord;
+using FinanceAssistant.Application.Documents.GetParsedDocument;
 using FinanceAssistant.Application.Documents.ListDocuments;
+using FinanceAssistant.Application.Documents.ParseDocument;
 using FinanceAssistant.Application.Documents.UpdateDocumentStatus;
 using FinanceAssistant.Application.Identity;
 using FinanceAssistant.Domain.Common;
@@ -114,6 +116,115 @@ public sealed class DocumentUseCaseTests
         Assert.Equal("Document was not found.", exception.Message);
     }
 
+    [Fact]
+    public async Task ParseStoresExtractedTextAndDeletesTemporaryFile()
+    {
+        var profileId = LocalProfileId.New();
+        var now = new DateTimeOffset(2026, 6, 16, 13, 0, 0, TimeSpan.Zero);
+        var repository = new FakeDocumentRepository();
+        var parsedRepository = new FakeParsedDocumentRepository();
+        var temporaryStorage = new FakeDocumentTemporaryStorage(ValidHash, byteLength: 11);
+        var useCase = new ParseDocumentUseCase(
+            new FixedCurrentProfileProvider(profileId),
+            repository,
+            parsedRepository,
+            temporaryStorage,
+            new FakeDocumentParser(new DocumentParseResult(DocumentMediaTypes.PlainText, "untrusted text", null)),
+            new FixedClock(now));
+
+        var result = await useCase.ExecuteAsync(new ParseDocumentRequest(
+            "notes.txt",
+            DocumentMediaTypes.PlainText,
+            new MemoryStream(Encoding.UTF8.GetBytes("hello world"))));
+
+        var document = repository.Documents.Single();
+        var parsedDocument = parsedRepository.Documents.Single();
+        Assert.Equal(DocumentParseStatus.Completed, result.Document.ParseStatus);
+        Assert.Equal("untrusted text", result.ParsedDocument!.UntrustedExtractedText);
+        Assert.Equal(profileId, document.ProfileId);
+        Assert.Equal(document.Id, parsedDocument.DocumentId);
+        Assert.Equal(temporaryStorage.SavedFile, temporaryStorage.DeletedFile);
+    }
+
+    [Fact]
+    public async Task ParseMarksFailedAndDeletesTemporaryFileWhenParserRejectsContent()
+    {
+        var repository = new FakeDocumentRepository();
+        var parsedRepository = new FakeParsedDocumentRepository();
+        var temporaryStorage = new FakeDocumentTemporaryStorage(ValidHash, byteLength: 9);
+        var useCase = new ParseDocumentUseCase(
+            new FixedCurrentProfileProvider(LocalProfileId.New()),
+            repository,
+            parsedRepository,
+            temporaryStorage,
+            new FakeDocumentParser(new DocumentParseException("Plain text document must be valid UTF-8.")),
+            new FixedClock(DateTimeOffset.UtcNow));
+
+        var result = await useCase.ExecuteAsync(new ParseDocumentRequest(
+            "bad.txt",
+            DocumentMediaTypes.PlainText,
+            new MemoryStream([0xff, 0xfe, 0xfd])));
+
+        Assert.Equal(DocumentParseStatus.Failed, result.Document.ParseStatus);
+        Assert.Equal("Plain text document must be valid UTF-8.", result.Document.FailureReason);
+        Assert.Null(result.ParsedDocument);
+        Assert.Empty(parsedRepository.Documents);
+        Assert.Equal(temporaryStorage.SavedFile, temporaryStorage.DeletedFile);
+    }
+
+    [Fact]
+    public async Task ParseMarksFailedWhenPdfExceedsPageLimit()
+    {
+        var repository = new FakeDocumentRepository();
+        var parsedRepository = new FakeParsedDocumentRepository();
+        var temporaryStorage = new FakeDocumentTemporaryStorage(ValidHash, byteLength: 11);
+        var useCase = new ParseDocumentUseCase(
+            new FixedCurrentProfileProvider(LocalProfileId.New()),
+            repository,
+            parsedRepository,
+            temporaryStorage,
+            new FakeDocumentParser(new DocumentParseResult(
+                DocumentMediaTypes.Pdf,
+                "too many pages",
+                ParsedDocument.MaximumPdfPageCount + 1)),
+            new FixedClock(DateTimeOffset.UtcNow));
+
+        var result = await useCase.ExecuteAsync(new ParseDocumentRequest(
+            "large.pdf",
+            DocumentMediaTypes.Pdf,
+            new MemoryStream(Encoding.UTF8.GetBytes("placeholder"))));
+
+        Assert.Equal(DocumentParseStatus.Failed, result.Document.ParseStatus);
+        Assert.Equal("PDF document exceeds the 100-page limit.", result.Document.FailureReason);
+        Assert.Null(result.ParsedDocument);
+        Assert.Empty(parsedRepository.Documents);
+        Assert.Equal(temporaryStorage.SavedFile, temporaryStorage.DeletedFile);
+    }
+
+
+    [Fact]
+    public async Task GetParsedDocumentUsesCurrentProfile()
+    {
+        var profileId = LocalProfileId.New();
+        var otherProfileId = LocalProfileId.New();
+        var documentId = DocumentId.New();
+        var parsedRepository = new FakeParsedDocumentRepository();
+        parsedRepository.Documents.Add(ParsedDocument.Create(
+            documentId,
+            otherProfileId,
+            DocumentMediaTypes.PlainText,
+            "other",
+            null,
+            DateTimeOffset.UtcNow));
+        var useCase = new GetParsedDocumentUseCase(
+            new FixedCurrentProfileProvider(profileId),
+            parsedRepository);
+
+        var result = await useCase.ExecuteAsync(new GetParsedDocumentRequest(documentId.Value));
+
+        Assert.Null(result);
+    }
+
     private sealed class FixedCurrentProfileProvider : ICurrentProfileProvider
     {
         private readonly LocalProfileId profileId;
@@ -220,10 +331,68 @@ public sealed class DocumentUseCaseTests
             return Task.FromResult(hash);
         }
 
+        public Task<Stream> OpenReadAsync(
+            TemporaryDocumentFile temporaryFile,
+            CancellationToken cancellationToken = default)
+        {
+            Stream content = new MemoryStream(new byte[byteLength]);
+            return Task.FromResult(content);
+        }
+
         public Task DeleteAsync(TemporaryDocumentFile temporaryFile, CancellationToken cancellationToken = default)
         {
             DeletedFile = temporaryFile;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeParsedDocumentRepository : IDocumentParsedContentRepository
+    {
+        public List<ParsedDocument> Documents { get; } = [];
+
+        public Task SaveParsedDocumentAsync(ParsedDocument parsedDocument, CancellationToken cancellationToken = default)
+        {
+            Documents.RemoveAll(document => document.DocumentId == parsedDocument.DocumentId);
+            Documents.Add(parsedDocument);
+            return Task.CompletedTask;
+        }
+
+        public Task<ParsedDocument?> GetParsedDocumentAsync(
+            LocalProfileId profileId,
+            DocumentId documentId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<ParsedDocument?>(
+                Documents.SingleOrDefault(document => document.ProfileId == profileId && document.DocumentId == documentId));
+        }
+    }
+
+    private sealed class FakeDocumentParser : IDocumentParser
+    {
+        private readonly DocumentParseResult? result;
+        private readonly DocumentParseException? exception;
+
+        public FakeDocumentParser(DocumentParseResult result)
+        {
+            this.result = result;
+        }
+
+        public FakeDocumentParser(DocumentParseException exception)
+        {
+            this.exception = exception;
+        }
+
+        public Task<DocumentParseResult> ParseAsync(
+            Stream content,
+            string declaredMediaType,
+            CancellationToken cancellationToken = default)
+        {
+            if (exception is not null)
+            {
+                throw exception;
+            }
+
+            return Task.FromResult(result!);
         }
     }
 }

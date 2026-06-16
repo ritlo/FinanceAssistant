@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="LiteDB" />
+    <PackageReference Include="UglyToad.PdfPig" />
     <ProjectReference Include="..\FinanceAssistant.Application\FinanceAssistant.Application.csproj" />
     <ProjectReference Include="..\FinanceAssistant.Domain\FinanceAssistant.Domain.csproj" />
   </ItemGroup>

@@ -57,6 +57,23 @@ public sealed class FileSystemDocumentTemporaryStorage : IDocumentTemporaryStora
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
+    public Task<Stream> OpenReadAsync(
+        TemporaryDocumentFile temporaryFile,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Stream source = new FileStream(
+            GetPath(temporaryFile.Id),
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 81920,
+            useAsync: true);
+
+        return Task.FromResult(source);
+    }
+
     public Task DeleteAsync(TemporaryDocumentFile temporaryFile, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

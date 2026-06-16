@@ -1,0 +1,142 @@
+@page "/documents"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.Documents
+@using FinanceAssistant.Application.Documents.GetParsedDocument
+@using FinanceAssistant.Application.Documents.ListDocuments
+@using FinanceAssistant.Application.Documents.ParseDocument
+@using FinanceAssistant.Domain.Common
+@using FinanceAssistant.Domain.Documents
+@inject ParseDocumentUseCase ParseDocument
+@inject ListDocumentsUseCase ListDocuments
+@inject GetParsedDocumentUseCase GetParsedDocument
+
+<PageTitle>Documents</PageTitle>
+
+<main class="documents-shell">
+    <section class="documents-entry">
+        <div>
+            <h1>Documents</h1>
+            <p class="page-kicker">Parse local PDF and plain text files without retaining originals.</p>
+        </div>
+
+        <InputFile OnChange="UploadAsync" accept="application/pdf,text/plain" />
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <p class="status-message">@StatusMessage</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <p class="validation-message">@ErrorMessage</p>
+        }
+    </section>
+
+    <section class="documents-list">
+        <h2>Parsed documents</h2>
+
+        @if (DocumentResults.Any())
+        {
+            @foreach (var document in DocumentResults)
+            {
+                <article class="document-row" @key="document.Id">
+                    <div class="document-summary">
+                        <div>
+                            <strong>@document.OriginalDisplayName</strong>
+                            <span>@document.VerifiedMediaType</span>
+                        </div>
+                        <span class="document-status">@document.ParseStatus</span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(document.FailureReason))
+                    {
+                        <p class="validation-message">@document.FailureReason</p>
+                    }
+
+                    @if (ParsedDocuments.TryGetValue(document.Id, out var parsed))
+                    {
+                        <div class="document-preview">
+                            <div>
+                                <span>@parsed.ParsedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                @if (parsed.PdfPageCount is not null)
+                                {
+                                    <span>@parsed.PdfPageCount page(s)</span>
+                                }
+                            </div>
+                            <pre>@Preview(parsed.UntrustedExtractedText)</pre>
+                        </div>
+                    }
+                </article>
+            }
+        }
+        else
+        {
+            <p class="empty-state">No documents parsed.</p>
+        }
+    </section>
+</main>
+
+@code {
+    private IReadOnlyList<DocumentResult> DocumentResults { get; set; } = [];
+
+    private Dictionary<Guid, ParsedDocumentResult> ParsedDocuments { get; } = [];
+
+    private string? StatusMessage { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocumentsAsync();
+    }
+
+    private async Task UploadAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        try
+        {
+            await using var stream = file.OpenReadStream(UploadedDocument.MaximumByteLength);
+            var result = await ParseDocument.ExecuteAsync(new ParseDocumentRequest(
+                file.Name,
+                file.ContentType,
+                stream));
+
+            StatusMessage = result.Document.ParseStatus == DocumentParseStatus.Completed
+                ? "Document parsed."
+                : "Document could not be parsed.";
+            ErrorMessage = result.Document.FailureReason;
+            await LoadDocumentsAsync();
+        }
+        catch (DomainValidationException exception)
+        {
+            StatusMessage = null;
+            ErrorMessage = exception.Message;
+        }
+        catch (IOException)
+        {
+            StatusMessage = null;
+            ErrorMessage = "Document exceeds the 10 MiB size limit.";
+        }
+    }
+
+    private async Task LoadDocumentsAsync()
+    {
+        DocumentResults = await ListDocuments.ExecuteAsync();
+        ParsedDocuments.Clear();
+
+        foreach (var document in DocumentResults.Where(document => document.ParseStatus == DocumentParseStatus.Completed))
+        {
+            var parsed = await GetParsedDocument.ExecuteAsync(new GetParsedDocumentRequest(document.Id));
+            if (parsed is not null)
+            {
+                ParsedDocuments[document.Id] = parsed;
+            }
+        }
+    }
+
+    private static string Preview(string text)
+    {
+        const int maximumPreviewLength = 2000;
+        return text.Length <= maximumPreviewLength ? text : text[..maximumPreviewLength];
+    }
+}

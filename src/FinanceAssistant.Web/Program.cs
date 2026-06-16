@@ -1,7 +1,9 @@
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.CreateDocumentRecord;
+using FinanceAssistant.Application.Documents.GetParsedDocument;
 using FinanceAssistant.Application.Documents.ListDocuments;
+using FinanceAssistant.Application.Documents.ParseDocument;
 using FinanceAssistant.Application.Documents.UpdateDocumentStatus;
 using FinanceAssistant.Application.Finance.Categories;
 using FinanceAssistant.Application.Finance.Categories.ListCategories;
@@ -51,7 +53,9 @@ builder.Services.AddScoped<ITransactionRepository, LiteDbTransactionRepository>(
 builder.Services.AddScoped<INoteRepository, LiteDbNoteRepository>();
 builder.Services.AddScoped<IReminderRepository, LiteDbPaymentReminderRepository>();
 builder.Services.AddScoped<IDocumentMetadataRepository, LiteDbDocumentMetadataRepository>();
+builder.Services.AddScoped<IDocumentParsedContentRepository, LiteDbParsedDocumentRepository>();
 builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
+builder.Services.AddScoped<IDocumentParser, LocalDocumentParser>();
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
@@ -68,7 +72,9 @@ builder.Services.AddScoped<DeleteReminderUseCase>();
 builder.Services.AddScoped<MarkReminderPaidUseCase>();
 builder.Services.AddScoped<MarkReminderUnpaidUseCase>();
 builder.Services.AddScoped<CreateDocumentRecordUseCase>();
+builder.Services.AddScoped<ParseDocumentUseCase>();
 builder.Services.AddScoped<ListDocumentsUseCase>();
+builder.Services.AddScoped<GetParsedDocumentUseCase>();
 builder.Services.AddScoped<UpdateDocumentStatusUseCase>();
 
 builder.Services.AddRazorComponents()

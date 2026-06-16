@@ -10,4 +10,5 @@ internal static class LiteDbCollectionNames
     public const string Notes = "notes";
     public const string PaymentReminders = "payment_reminders";
     public const string DocumentMetadata = "document_metadata";
+    public const string ParsedDocuments = "parsed_documents";
 }

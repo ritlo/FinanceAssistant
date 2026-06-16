@@ -8,5 +8,9 @@ public interface IDocumentTemporaryStorage
         TemporaryDocumentFile temporaryFile,
         CancellationToken cancellationToken = default);
 
+    Task<Stream> OpenReadAsync(
+        TemporaryDocumentFile temporaryFile,
+        CancellationToken cancellationToken = default);
+
     Task DeleteAsync(TemporaryDocumentFile temporaryFile, CancellationToken cancellationToken = default);
 }

@@ -355,6 +355,74 @@ button {
     justify-content: flex-end;
 }
 
+.documents-shell {
+    display: grid;
+    gap: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+.documents-entry,
+.documents-list {
+    display: grid;
+    gap: 16px;
+}
+
+.document-row {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
+.document-summary {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.document-summary div {
+    display: grid;
+    gap: 3px;
+}
+
+.document-summary span,
+.document-preview span {
+    font-size: 0.85rem;
+    color: #525252;
+}
+
+.document-status {
+    font-weight: 700;
+}
+
+.document-preview {
+    display: grid;
+    gap: 8px;
+}
+
+.document-preview div {
+    display: flex;
+    gap: 12px;
+}
+
+.document-preview pre {
+    max-height: 280px;
+    overflow: auto;
+    margin: 0;
+    padding: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f7f7f3;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
 .transaction-row {
     display: grid;
     gap: 8px;
@@ -455,5 +523,10 @@ button {
 
     .payment-state {
         text-align: left;
+    }
+
+    .document-summary {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
