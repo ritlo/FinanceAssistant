@@ -1,4 +1,8 @@
 using FinanceAssistant.Application.Assistant;
+using FinanceAssistant.Application.Assistant.Confirmations;
+using FinanceAssistant.Application.Assistant.Confirmations.CancelAssistantProposal;
+using FinanceAssistant.Application.Assistant.Confirmations.ConfirmAssistantProposal;
+using FinanceAssistant.Application.Assistant.Confirmations.CreateAssistantProposal;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.CreateDocumentRecord;
@@ -68,6 +72,7 @@ builder.Services.AddScoped<IDocumentMetadataRepository, LiteDbDocumentMetadataRe
 builder.Services.AddScoped<IDocumentParsedContentRepository, LiteDbParsedDocumentRepository>();
 builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
 builder.Services.AddScoped<IDocumentParser, LocalDocumentParser>();
+builder.Services.AddScoped<IAssistantConfirmationRepository, LiteDbAssistantConfirmationRepository>();
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
 builder.Services.AddHttpClient<IAssistantModelClient, OpenAiCompatibleAssistantModelClient>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
@@ -89,6 +94,9 @@ builder.Services.AddScoped<ParseDocumentUseCase>();
 builder.Services.AddScoped<ListDocumentsUseCase>();
 builder.Services.AddScoped<GetParsedDocumentUseCase>();
 builder.Services.AddScoped<UpdateDocumentStatusUseCase>();
+builder.Services.AddScoped<CreateAssistantProposalUseCase>();
+builder.Services.AddScoped<ConfirmAssistantProposalUseCase>();
+builder.Services.AddScoped<CancelAssistantProposalUseCase>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

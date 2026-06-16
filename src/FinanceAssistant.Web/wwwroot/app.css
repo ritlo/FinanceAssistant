@@ -401,6 +401,32 @@ button {
     overflow-wrap: anywhere;
 }
 
+.assistant-confirmation-form {
+    display: grid;
+    gap: 12px;
+}
+
+.assistant-confirmation-preview {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
+.assistant-confirmation-preview pre {
+    max-height: 260px;
+    overflow: auto;
+    margin: 0;
+    padding: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f7f7f3;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
 .documents-entry,
 .documents-list {
     display: grid;
