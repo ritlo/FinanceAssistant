@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinanceAssistant UI Mockup</title>
+  <style>
+    :root {
+      --bg: #f4f6f5;
+      --surface: #ffffff;
+      --surface-muted: #edf2ef;
+      --ink: #17201b;
+      --muted: #5e6c64;
+      --line: #d7ded9;
+      --green: #176b4d;
+      --green-dark: #0f4f39;
+      --red: #b42318;
+      --amber: #a15c07;
+      --blue: #245c99;
+      --shadow: 0 18px 45px rgba(23, 32, 27, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: default;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #15231c;
+      color: #f8faf8;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 6px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #d8f2df;
+      color: #0f4f39;
+      font-weight: 800;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .brand span {
+      display: block;
+      color: #b8c7bf;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 4px;
+    }
+
+    .nav-item {
+      min-height: 42px;
+      border-radius: 8px;
+      color: #d9e3dd;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .nav-item.active {
+      background: #24382e;
+      color: #ffffff;
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      color: currentColor;
+      flex: 0 0 auto;
+    }
+
+    .local-status {
+      margin-top: auto;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 8px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .local-status strong {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .local-status span {
+      display: block;
+      font-size: 12px;
+      color: #bfd2c8;
+      line-height: 1.45;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .page-title h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    .page-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-button,
+    .primary-button,
+    .secondary-button,
+    .danger-button {
+      min-height: 40px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      width: 40px;
+      padding: 0;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    .primary-button {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .secondary-button {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .danger-button {
+      background: #fff1f0;
+      color: var(--red);
+      border: 1px solid #f2c4bf;
+    }
+
+    .content {
+      padding: 28px 32px 40px;
+      display: grid;
+      gap: 22px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      min-height: 64px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .panel-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .form-grid {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field.wide {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: #26372e;
+      font-weight: 650;
+      font-size: 12px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: #e8f5ee;
+      color: var(--green-dark);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .summary-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-row:last-child {
+      border-bottom: 0;
+    }
+
+    .bar-track {
+      height: 9px;
+      background: var(--surface-muted);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: inherit;
+    }
+
+    .amount.negative {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .amount.positive {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .transaction-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+      text-align: left;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+      font-size: 14px;
+    }
+
+    .transaction-table th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      background: #fbfcfb;
+    }
+
+    .transaction-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .transaction-desc {
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 0 9px;
+      background: var(--surface-muted);
+      color: #314239;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .mini-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .assistant-panel {
+      position: sticky;
+      top: 94px;
+      overflow: hidden;
+    }
+
+    .assistant-model {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px 18px;
+      background: #edf5ff;
+      border-bottom: 1px solid #cfdced;
+      color: #193d66;
+      font-size: 12px;
+    }
+
+    .conversation {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      max-height: 520px;
+      overflow: hidden;
+    }
+
+    .message {
+      display: grid;
+      gap: 6px;
+      max-width: 92%;
+    }
+
+    .message.assistant {
+      justify-self: start;
+    }
+
+    .message.user {
+      justify-self: end;
+    }
+
+    .message strong {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .bubble {
+      border-radius: 8px;
+      padding: 12px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .assistant .bubble {
+      background: var(--surface-muted);
+    }
+
+    .user .bubble {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .tool-preview {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .tool-preview header {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 10px;
+      background: #fbfcfb;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tool-preview pre {
+      margin: 0;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #34453b;
+      max-height: 120px;
+      overflow: hidden;
+    }
+
+    .assistant-composer {
+      border-top: 1px solid var(--line);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-actions button {
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: var(--surface-muted);
+      color: #314239;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .composer-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .composer-row textarea {
+      min-height: 76px;
+    }
+
+    .confirmation-strip {
+      margin: 0 18px 18px;
+      border: 1px solid #e7cf9c;
+      background: #fff8e8;
+      color: #6d4104;
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .confirmation-strip div {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .confirmation-strip code {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      word-break: break-all;
+    }
+
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        display: block;
+        padding: 16px;
+      }
+
+      .nav {
+        margin-top: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .local-status {
+        display: none;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .assistant-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar,
+      .content {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-top: 14px;
+        padding-bottom: 14px;
+        gap: 12px;
+      }
+
+      .metric-grid,
+      .form-grid,
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions,
+      .composer-row {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .transaction-table,
+      .transaction-table thead,
+      .transaction-table tbody,
+      .transaction-table th,
+      .transaction-table td,
+      .transaction-table tr {
+        display: block;
+      }
+
+      .transaction-table thead {
+        display: none;
+      }
+
+      .transaction-table tr {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .transaction-table td {
+        border-bottom: 0;
+        padding: 5px 18px;
+      }
+
+      .row-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">FA</div>
+        <div>
+          <strong>FinanceAssistant</strong>
+          <span>Local-first finance workspace</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <div class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 16v-5"></path><path d="M12 16V8"></path><path d="M16 16v-3"></path>
+          </svg>
+          Dashboard
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 7h10"></path><path d="M7 12h10"></path><path d="M7 17h6"></path><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path>
+          </svg>
+          Documents
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 8h12"></path><path d="M6 12h12"></path><path d="M6 16h7"></path><path d="M4 4h16v16H4z"></path>
+          </svg>
+          Notes
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="9"></circle>
+          </svg>
+          Reminders
+        </div>
+      </nav>
+
+      <div class="local-status">
+        <strong>Local model</strong>
+        <span>Endpoint: localhost:11434</span>
+        <span>Remote sharing: disabled</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-title">
+          <h1>Transactions</h1>
+          <p>Track cash flow, inspect monthly spend, and ask the local assistant for grounded actions.</p>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" aria-label="Refresh">
+            <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.4-2.6"></path><path d="M3 12a9 9 0 0 1 15.4-6.4"></path><path d="M18 2v4h-4"></path><path d="M6 22v-4h4"></path>
+            </svg>
+          </button>
+          <button class="primary-button">
+            <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"></path><path d="M5 12h14"></path>
+            </svg>
+            New transaction
+          </button>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="metric-grid">
+          <div class="metric">
+            <span>June expenses</span>
+            <strong>$2,184.34</strong>
+            <small>12% lower than May</small>
+          </div>
+          <div class="metric">
+            <span>Income</span>
+            <strong>$5,420.00</strong>
+            <small>Stable monthly salary</small>
+          </div>
+          <div class="metric">
+            <span>Net cash flow</span>
+            <strong>$3,235.66</strong>
+            <small>Positive for 4 months</small>
+          </div>
+          <div class="metric">
+            <span>Assistant proposals</span>
+            <strong>2</strong>
+            <small>Waiting for confirmation</small>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div class="stack">
+            <section class="panel">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <h2>Log transaction</h2>
+                  <p>Auto-category uses deterministic local rules before falling back to Other.</p>
+                </div>
+                <span class="status-pill">No network required</span>
+              </div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="type">Type</label>
+                  <select id="type">
+                    <option>Expense</option>
+                    <option>Income</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="amount">Amount</label>
+                  <input id="amount" value="34.80">
+                </div>
+                <div class="field">
+                  <label for="date">Date</label>
+                  <input id="date" value="2026-06-16">
+                </div>
+                <div class="field">
+                  <label for="category">Category</label>
+                  <select id="category">
+                    <option>Auto</option>
+                    <option>Groceries</option>
+                    <option>Transport</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="field wide">
+                  <label for="description">Description</label>
+                  <textarea id="description">Neighborhood market and pantry staples</textarea>
+                </div>
+                <div class="form-actions">
+                  <span class="status-pill">Matched rule: market -> Groceries</span>
+                  <button class="primary-button">Log transaction</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <h2>Monthly summary</h2>
+                  <p>June 2026 category totals</p>
+                </div>
+                <div class="top-actions">
+                  <button class="secondary-button">June</button>
+                  <button class="secondary-button">2026</button>
+                </div>
+              </div>
+
+              <div class="summary-body">
+                <div class="summary-row">
+                  <div>
+                    <strong>Groceries</strong>
+                    <div class="bar-track"><div class="bar-fill" style="width: 72%"></div></div>
+                  </div>
+                  <span class="amount negative">$684.10</span>
+                </div>
+                <div class="summary-row">
+                  <div>
+                    <strong>Housing</strong>
+                    <div class="bar-track"><div class="bar-fill" style="width: 58%"></div></div>
+                  </div>
+                  <span class="amount negative">$550.00</span>
+                </div>
+                <div class="summary-row">
+                  <div>
+                    <strong>Transport</strong>
+                    <div class="bar-track"><div class="bar-fill" style="width: 29%"></div></div>
+                  </div>
+                  <span class="amount negative">$278.42</span>
+                </div>
+                <div class="summary-row">
+                  <div>
+                    <strong>Other</strong>
+                    <div class="bar-track"><div class="bar-fill" style="width: 18%"></div></div>
+                  </div>
+                  <span class="amount negative">$171.82</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <h2>Recent transactions</h2>
+                  <p>Newest first, grouped by local profile</p>
+                </div>
+                <button class="secondary-button">Export</button>
+              </div>
+
+              <table class="transaction-table">
+                <thead>
+                  <tr>
+                    <th style="width: 116px">Date</th>
+                    <th>Description</th>
+                    <th style="width: 150px">Category</th>
+                    <th style="width: 110px">Amount</th>
+                    <th style="width: 130px"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2026-06-16</td>
+                    <td><div class="transaction-desc">Neighborhood market and pantry staples</div></td>
+                    <td><span class="tag">Groceries</span></td>
+                    <td><span class="amount negative">-$34.80</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <button class="icon-button" aria-label="Edit">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                          </svg>
+                        </button>
+                        <button class="icon-button" aria-label="Delete">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 15h10l1-15"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2026-06-15</td>
+                    <td><div class="transaction-desc">Monthly salary</div></td>
+                    <td><span class="tag">Salary</span></td>
+                    <td><span class="amount positive">$5,420.00</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <button class="icon-button" aria-label="Edit">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                          </svg>
+                        </button>
+                        <button class="icon-button" aria-label="Delete">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 15h10l1-15"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2026-06-13</td>
+                    <td><div class="transaction-desc">Train pass reload</div></td>
+                    <td><span class="tag">Transport</span></td>
+                    <td><span class="amount negative">-$72.00</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <button class="icon-button" aria-label="Edit">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                          </svg>
+                        </button>
+                        <button class="icon-button" aria-label="Delete">
+                          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 15h10l1-15"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+
+          <aside class="panel assistant-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h2>Local assistant</h2>
+                <p>Grounded reads now, confirmed writes only</p>
+              </div>
+              <span class="status-pill">LLM ready</span>
+            </div>
+
+            <div class="assistant-model">
+              <span>Model: local</span>
+              <span>Remote: off</span>
+            </div>
+
+            <div class="conversation">
+              <div class="message user">
+                <strong>You</strong>
+                <div class="bubble">How did groceries trend this month?</div>
+              </div>
+
+              <div class="message assistant">
+                <strong>FinanceAssistant</strong>
+                <div class="bubble">I can inspect local transactions and monthly summary data. I found groceries as the largest expense category in June.</div>
+              </div>
+
+              <div class="tool-preview">
+                <header>
+                  <span>AnalyzeSpendingPatterns</span>
+                  <span>Read-only</span>
+                </header>
+                <pre>{
+  "period": "2026-06",
+  "largestCategory": "Groceries",
+  "total": 684.10,
+  "recommendation": "Review recurring market purchases."
+}</pre>
+              </div>
+
+              <div class="message user">
+                <strong>You</strong>
+                <div class="bubble">Add a reminder to review subscriptions next Friday.</div>
+              </div>
+
+              <div class="message assistant">
+                <strong>FinanceAssistant</strong>
+                <div class="bubble">I prepared a reminder proposal. It will not be saved unless you confirm it.</div>
+              </div>
+            </div>
+
+            <div class="confirmation-strip">
+              <strong>Pending confirmation</strong>
+              <div>
+                <span>ProposePaymentReminder</span>
+                <code>f4b8...91c2</code>
+              </div>
+              <button class="primary-button">Review proposal</button>
+            </div>
+
+            <div class="assistant-composer">
+              <div class="quick-actions">
+                <button>Explain June spending</button>
+                <button>Find uncategorized</button>
+                <button>Draft reminder</button>
+              </div>
+              <div class="composer-row">
+                <textarea aria-label="Assistant message">Ask about transactions, documents, notes, or payment reminders...</textarea>
+                <button class="primary-button">
+                  <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4Z"></path>
+                  </svg>
+                  Send
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
