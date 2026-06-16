@@ -6,6 +6,7 @@ using FinanceAssistant.Infrastructure.Persistence;
 
 namespace FinanceAssistant.Infrastructure.IntegrationTests.Persistence;
 
+[Collection("Sequential")]
 public sealed class LiteDbSchemaInitializerTests
 {
     [Fact]

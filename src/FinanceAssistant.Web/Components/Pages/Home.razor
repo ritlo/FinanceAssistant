@@ -1,12 +1,20 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 @using FinanceAssistant.Application.Finance.Categories
 @using FinanceAssistant.Application.Finance.Categories.ListCategories
+@using FinanceAssistant.Application.Finance.Transactions
+@using FinanceAssistant.Application.Finance.Transactions.DeleteTransaction
+@using FinanceAssistant.Application.Finance.Transactions.GetTransactions
 @using FinanceAssistant.Application.Finance.Transactions.LogTransaction
+@using FinanceAssistant.Application.Finance.Transactions.UpdateTransaction
 @using FinanceAssistant.Domain.Finance.Transactions
 @using FinanceAssistant.Web.Finance.Transactions.LogTransaction
+@using FinanceAssistant.Web.Finance.Transactions.UpdateTransaction
 @inject ListCategoriesUseCase ListCategories
 @inject LogTransactionUseCase LogTransaction
+@inject GetTransactionsUseCase GetTransactions
+@inject UpdateTransactionUseCase UpdateTransaction
+@inject DeleteTransactionUseCase DeleteTransaction
 
 <PageTitle>Transactions</PageTitle>
 
@@ -65,6 +73,84 @@
             <p class="status-message">@StatusMessage</p>
         }
     </section>
+
+    @if (Transactions.Any())
+    {
+        <section class="transaction-list">
+            <h2>Recent transactions</h2>
+
+            @foreach (var transaction in Transactions)
+            {
+                <div class="transaction-row" @key="transaction.Id">
+                    @if (EditingId == transaction.Id)
+                    {
+                        <div class="edit-form">
+                            <EditForm Model="EditForm" OnValidSubmit="UpdateAsync" FormName="update-transaction">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+
+                                <div class="transaction-grid">
+                                    <label>
+                                        <span>Type</span>
+                                        <InputSelect @bind-Value="EditForm.Type">
+                                            <option value="@TransactionType.Expense">Expense</option>
+                                            <option value="@TransactionType.Income">Income</option>
+                                        </InputSelect>
+                                    </label>
+
+                                    <label>
+                                        <span>Amount</span>
+                                        <InputNumber @bind-Value="EditForm.Amount" />
+                                    </label>
+
+                                    <label>
+                                        <span>Date</span>
+                                        <InputDate @bind-Value="EditForm.Date" />
+                                    </label>
+
+                                    <label>
+                                        <span>Category</span>
+                                        <InputSelect @bind-Value="EditForm.CategoryId">
+                                            <option value="">Auto</option>
+                                            @foreach (var category in Categories.Where(category => category.TransactionType == EditForm.Type))
+                                            {
+                                                <option value="@category.Id">@category.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                <label class="description-field">
+                                    <span>Description</span>
+                                    <InputText @bind-Value="EditForm.Description" />
+                                </label>
+
+                                <div class="edit-actions">
+                                    <button type="submit">Save</button>
+                                    <button type="button" class="cancel-button" @onclick="CancelEdit">Cancel</button>
+                                </div>
+                            </EditForm>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="transaction-details">
+                            <span class="transaction-date">@transaction.Date.ToString("yyyy-MM-dd")</span>
+                            <span class="transaction-description">@transaction.Description</span>
+                            <span class="transaction-category">@transaction.CategoryName</span>
+                            <span class="transaction-amount @(transaction.Type == TransactionType.Expense ? "amount-expense" : "amount-income")">
+                                @(transaction.Type == TransactionType.Expense ? "-" : "+")@transaction.Amount:0.00
+                            </span>
+                        </div>
+                        <div class="transaction-actions">
+                            <button type="button" class="edit-button" @onclick="() => StartEdit(transaction)">Edit</button>
+                            <button type="button" class="delete-button" @onclick="() => DeleteAsync(transaction.Id)">Delete</button>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
 </main>
 
 @code {
@@ -72,19 +158,69 @@
 
     private IReadOnlyList<CategoryResult> Categories { get; set; } = [];
 
+    private IReadOnlyList<TransactionResult> Transactions { get; set; } = [];
+
     private string? StatusMessage { get; set; }
+
+    private Guid? EditingId { get; set; }
+
+    private UpdateTransactionFormModel EditForm { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         Categories = await ListCategories.ExecuteAsync();
+        Transactions = await GetTransactions.ExecuteAsync();
     }
 
     private async Task SubmitAsync()
     {
         var result = await LogTransaction.ExecuteAsync(Form.ToRequest());
-        var category = Categories.Single(item => item.Id == result.CategoryId);
-        StatusMessage = $"Logged {result.Type.ToString().ToLowerInvariant()} {result.Amount:0.00} in {category.Name}.";
+        Categories = await ListCategories.ExecuteAsync();
+        Transactions = await GetTransactions.ExecuteAsync();
+        StatusMessage = $"Logged {result.Type.ToString().ToLowerInvariant()} {result.Amount:0.00} in {GetCategoryName(result.CategoryId)}.";
         Form.Description = string.Empty;
         Form.CategoryId = null;
+    }
+
+    private void StartEdit(TransactionResult transaction)
+    {
+        EditingId = transaction.Id;
+        EditForm = new UpdateTransactionFormModel
+        {
+            Id = transaction.Id,
+            Amount = transaction.Amount,
+            Type = transaction.Type,
+            Date = transaction.Date,
+            Description = transaction.Description,
+            CategoryId = transaction.CategoryId.ToString()
+        };
+    }
+
+    private void CancelEdit()
+    {
+        EditingId = null;
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (EditingId is null) return;
+
+        var result = await UpdateTransaction.ExecuteAsync(EditForm.ToRequest());
+        EditingId = null;
+        Transactions = await GetTransactions.ExecuteAsync();
+        Categories = await ListCategories.ExecuteAsync();
+        StatusMessage = $"Updated {result.Description} to {result.CategoryName}.";
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        await DeleteTransaction.ExecuteAsync(new DeleteTransactionRequest(id));
+        Transactions = await GetTransactions.ExecuteAsync();
+        StatusMessage = "Transaction deleted.";
+    }
+
+    private string GetCategoryName(Guid categoryId)
+    {
+        return Categories.FirstOrDefault(c => c.Id == categoryId)?.Name ?? "Unknown";
     }
 }

@@ -213,6 +213,49 @@ public sealed class LogTransactionUseCaseTests
             Added.Add(transaction);
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<Transaction>> ListTransactionsAsync(
+            LocalProfileId profileId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<Transaction>>(
+                Added.Where(t => t.ProfileId == profileId).ToArray());
+        }
+
+        public Task<Transaction?> GetTransactionAsync(
+            LocalProfileId profileId,
+            TransactionId transactionId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<Transaction?>(
+                Added.SingleOrDefault(t => t.Id == transactionId && t.ProfileId == profileId));
+        }
+
+        public Task UpdateTransactionAsync(Transaction transaction, CancellationToken cancellationToken = default)
+        {
+            var existing = Added.SingleOrDefault(t => t.Id == transaction.Id);
+            if (existing is not null)
+            {
+                var index = Added.IndexOf(existing);
+                Added[index] = transaction;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteTransactionAsync(
+            LocalProfileId profileId,
+            TransactionId transactionId,
+            CancellationToken cancellationToken = default)
+        {
+            var existing = Added.SingleOrDefault(t => t.Id == transactionId && t.ProfileId == profileId);
+            if (existing is not null)
+            {
+                Added.Remove(existing);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class RecordingTransactionChangeNotifier : ITransactionChangeNotifier

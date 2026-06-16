@@ -1,7 +1,10 @@
 using FinanceAssistant.Application.Finance.Categories;
 using FinanceAssistant.Application.Finance.Categories.ListCategories;
 using FinanceAssistant.Application.Finance.Transactions;
+using FinanceAssistant.Application.Finance.Transactions.DeleteTransaction;
+using FinanceAssistant.Application.Finance.Transactions.GetTransactions;
 using FinanceAssistant.Application.Finance.Transactions.LogTransaction;
+using FinanceAssistant.Application.Finance.Transactions.UpdateTransaction;
 using FinanceAssistant.Application.Identity;
 using FinanceAssistant.Infrastructure.Finance.Categories;
 using FinanceAssistant.Infrastructure.Finance.Transactions;
@@ -25,6 +28,9 @@ builder.Services.AddScoped<ITransactionRepository, LiteDbTransactionRepository>(
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
+builder.Services.AddScoped<GetTransactionsUseCase>();
+builder.Services.AddScoped<UpdateTransactionUseCase>();
+builder.Services.AddScoped<DeleteTransactionUseCase>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
