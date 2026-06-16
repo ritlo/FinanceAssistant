@@ -1,3 +1,4 @@
+using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Finance.Categories;
 using FinanceAssistant.Application.Finance.Categories.ListCategories;
 using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary;
@@ -7,10 +8,16 @@ using FinanceAssistant.Application.Finance.Transactions.GetTransactions;
 using FinanceAssistant.Application.Finance.Transactions.LogTransaction;
 using FinanceAssistant.Application.Finance.Transactions.UpdateTransaction;
 using FinanceAssistant.Application.Identity;
+using FinanceAssistant.Application.PersonalRecords.Notes;
+using FinanceAssistant.Application.PersonalRecords.Notes.CreateNote;
+using FinanceAssistant.Application.PersonalRecords.Notes.DeleteNote;
+using FinanceAssistant.Application.PersonalRecords.Notes.ListNotes;
+using FinanceAssistant.Infrastructure.Common;
 using FinanceAssistant.Infrastructure.Finance.Categories;
 using FinanceAssistant.Infrastructure.Finance.Transactions;
 using FinanceAssistant.Infrastructure.Identity;
 using FinanceAssistant.Infrastructure.Persistence;
+using FinanceAssistant.Infrastructure.PersonalRecords.Notes;
 using FinanceAssistant.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,8 +31,10 @@ var dataOptions = new FinanceAssistantDataOptions
 builder.Services.AddSingleton(dataOptions);
 builder.Services.AddSingleton<LiteDbSchemaInitializer>();
 builder.Services.AddScoped<ICurrentProfileProvider, LiteDbCurrentProfileProvider>();
+builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICategoryRepository, LiteDbCategoryRepository>();
 builder.Services.AddScoped<ITransactionRepository, LiteDbTransactionRepository>();
+builder.Services.AddScoped<INoteRepository, LiteDbNoteRepository>();
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
@@ -33,6 +42,9 @@ builder.Services.AddScoped<GetTransactionsUseCase>();
 builder.Services.AddScoped<UpdateTransactionUseCase>();
 builder.Services.AddScoped<DeleteTransactionUseCase>();
 builder.Services.AddScoped<GetMonthlySummaryUseCase>();
+builder.Services.AddScoped<CreateNoteUseCase>();
+builder.Services.AddScoped<ListNotesUseCase>();
+builder.Services.AddScoped<DeleteNoteUseCase>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

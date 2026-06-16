@@ -1,0 +1,115 @@
+@page "/notes"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.PersonalRecords.Notes
+@using FinanceAssistant.Application.PersonalRecords.Notes.CreateNote
+@using FinanceAssistant.Application.PersonalRecords.Notes.DeleteNote
+@using FinanceAssistant.Application.PersonalRecords.Notes.ListNotes
+@using FinanceAssistant.Domain.Common
+@inject CreateNoteUseCase CreateNote
+@inject ListNotesUseCase ListNotes
+@inject DeleteNoteUseCase DeleteNote
+
+<PageTitle>Notes</PageTitle>
+
+<main class="notes-shell">
+    <section class="notes-entry">
+        <div>
+            <h1>Notes</h1>
+            <p class="page-kicker">Capture local personal records without exposing profile selection.</p>
+        </div>
+
+        <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+            <label class="description-field">
+                <span>Content</span>
+                <textarea @bind="Content" rows="4"></textarea>
+            </label>
+
+            <button type="submit">Add note</button>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <p class="status-message">@StatusMessage</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <p class="validation-message">@ErrorMessage</p>
+        }
+    </section>
+
+    <section class="notes-list">
+        <h2>Recent notes</h2>
+
+        @if (NoteResults.Any())
+        {
+            @foreach (var note in NoteResults)
+            {
+                <div class="note-row" @key="note.Id">
+                    <div>
+                        <time>@note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
+                        <p>@note.Content</p>
+                    </div>
+                    <button type="button" class="delete-button" @onclick="() => DeleteAsync(note.Id)">Delete</button>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="empty-state">No notes recorded.</p>
+        }
+    </section>
+</main>
+
+@code {
+    private string Content { get; set; } = string.Empty;
+
+    private IReadOnlyList<NoteResult> NoteResults { get; set; } = [];
+
+    private string? StatusMessage { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotesAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            await CreateNote.ExecuteAsync(new CreateNoteRequest(Content));
+            Content = string.Empty;
+            StatusMessage = "Note added.";
+            ErrorMessage = null;
+            await LoadNotesAsync();
+        }
+        catch (DomainValidationException exception)
+        {
+            StatusMessage = null;
+            ErrorMessage = exception.Message;
+        }
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        try
+        {
+            await DeleteNote.ExecuteAsync(new DeleteNoteRequest(id));
+            StatusMessage = "Note deleted.";
+            ErrorMessage = null;
+            await LoadNotesAsync();
+        }
+        catch (DomainValidationException exception)
+        {
+            StatusMessage = null;
+            ErrorMessage = exception.Message;
+        }
+    }
+
+    private async Task LoadNotesAsync()
+    {
+        NoteResults = await ListNotes.ExecuteAsync();
+    }
+}

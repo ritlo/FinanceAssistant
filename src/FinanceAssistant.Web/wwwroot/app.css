@@ -49,12 +49,29 @@ body {
     padding: 32px 20px;
 }
 
+.notes-shell {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
 .transaction-entry {
     display: grid;
     gap: 22px;
 }
 
+.notes-entry {
+    display: grid;
+    gap: 22px;
+}
+
 .transaction-entry h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.notes-entry h1 {
     margin: 0;
     font-size: 2rem;
     font-weight: 700;
@@ -84,7 +101,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
     min-height: 42px;
     border: 1px solid #c9c9c2;
     border-radius: 6px;
@@ -92,6 +110,10 @@ select {
     background: #fff;
     color: #171717;
     font: inherit;
+}
+
+textarea {
+    resize: vertical;
 }
 
 .description-field {
@@ -218,6 +240,41 @@ button {
     font-weight: 600;
 }
 
+.notes-list {
+    margin-top: 32px;
+    padding-top: 22px;
+    border-top: 1px solid #c9c9c2;
+}
+
+.notes-list h2 {
+    margin: 0 0 16px;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.note-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
+.note-row time {
+    display: block;
+    margin-bottom: 6px;
+    color: #525252;
+    font-size: 0.85rem;
+}
+
+.note-row p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
 .transaction-row {
     display: grid;
     gap: 8px;
@@ -305,5 +362,9 @@ button {
 
     .transaction-amount {
         text-align: left;
+    }
+
+    .note-row {
+        display: grid;
     }
 }
