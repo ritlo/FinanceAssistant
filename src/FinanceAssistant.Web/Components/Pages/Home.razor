@@ -2,11 +2,13 @@
 @rendermode InteractiveServer
 @using FinanceAssistant.Application.Finance.Categories
 @using FinanceAssistant.Application.Finance.Categories.ListCategories
+@using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary
 @using FinanceAssistant.Application.Finance.Transactions
 @using FinanceAssistant.Application.Finance.Transactions.DeleteTransaction
 @using FinanceAssistant.Application.Finance.Transactions.GetTransactions
 @using FinanceAssistant.Application.Finance.Transactions.LogTransaction
 @using FinanceAssistant.Application.Finance.Transactions.UpdateTransaction
+@using FinanceAssistant.Domain.Common
 @using FinanceAssistant.Domain.Finance.Transactions
 @using FinanceAssistant.Web.Finance.Transactions.LogTransaction
 @using FinanceAssistant.Web.Finance.Transactions.UpdateTransaction
@@ -15,6 +17,7 @@
 @inject GetTransactionsUseCase GetTransactions
 @inject UpdateTransactionUseCase UpdateTransaction
 @inject DeleteTransactionUseCase DeleteTransaction
+@inject GetMonthlySummaryUseCase GetMonthlySummary
 
 <PageTitle>Transactions</PageTitle>
 
@@ -73,6 +76,56 @@
             <p class="status-message">@StatusMessage</p>
         }
     </section>
+
+    @if (Summary is not null)
+    {
+        <section class="monthly-summary">
+            <div class="summary-header">
+                <div>
+                    <h2>Monthly expenses</h2>
+                    <p>@SelectedMonthName @Summary.Year</p>
+                </div>
+                <div class="summary-controls">
+                    <label>
+                        <span>Month</span>
+                        <input type="number" min="1" max="12" @bind="SelectedMonth" />
+                    </label>
+                    <label>
+                        <span>Year</span>
+                        <input type="number" min="1" max="9999" @bind="SelectedYear" />
+                    </label>
+                    <button type="button" @onclick="LoadSummaryAsync">Apply</button>
+                </div>
+            </div>
+
+            <div class="summary-total">
+                <span>Total expenses</span>
+                <strong>@($"{Summary.ExpenseTotal:0.00}")</strong>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(SummaryErrorMessage))
+            {
+                <p class="validation-message">@SummaryErrorMessage</p>
+            }
+
+            @if (Summary.Categories.Any())
+            {
+                <div class="summary-categories">
+                    @foreach (var category in Summary.Categories)
+                    {
+                        <div class="summary-category-row" @key="category.CategoryId">
+                            <span>@category.CategoryName</span>
+                            <strong>@($"{category.Total:0.00}")</strong>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="empty-state">No expenses recorded for this month.</p>
+            }
+        </section>
+    }
 
     @if (Transactions.Any())
     {
@@ -160,23 +213,36 @@
 
     private IReadOnlyList<TransactionResult> Transactions { get; set; } = [];
 
+    private GetMonthlySummaryResult? Summary { get; set; }
+
+    private string? SummaryErrorMessage { get; set; }
+
     private string? StatusMessage { get; set; }
 
     private Guid? EditingId { get; set; }
 
     private UpdateTransactionFormModel EditForm { get; set; } = new();
 
+    private int SelectedYear { get; set; }
+
+    private int SelectedMonth { get; set; }
+
+    private string SelectedMonthName => Summary is null
+        ? string.Empty
+        : new DateOnly(Summary.Year, Summary.Month, 1).ToString("MMMM");
+
     protected override async Task OnInitializedAsync()
     {
-        Categories = await ListCategories.ExecuteAsync();
-        Transactions = await GetTransactions.ExecuteAsync();
+        var today = DateTime.Today;
+        SelectedYear = today.Year;
+        SelectedMonth = today.Month;
+        await LoadScreenDataAsync();
     }
 
     private async Task SubmitAsync()
     {
         var result = await LogTransaction.ExecuteAsync(Form.ToRequest());
-        Categories = await ListCategories.ExecuteAsync();
-        Transactions = await GetTransactions.ExecuteAsync();
+        await LoadScreenDataAsync();
         StatusMessage = $"Logged {result.Type.ToString().ToLowerInvariant()} {result.Amount:0.00} in {GetCategoryName(result.CategoryId)}.";
         Form.Description = string.Empty;
         Form.CategoryId = null;
@@ -207,16 +273,36 @@
 
         var result = await UpdateTransaction.ExecuteAsync(EditForm.ToRequest());
         EditingId = null;
-        Transactions = await GetTransactions.ExecuteAsync();
-        Categories = await ListCategories.ExecuteAsync();
+        await LoadScreenDataAsync();
         StatusMessage = $"Updated {result.Description} to {result.CategoryName}.";
     }
 
     private async Task DeleteAsync(Guid id)
     {
         await DeleteTransaction.ExecuteAsync(new DeleteTransactionRequest(id));
-        Transactions = await GetTransactions.ExecuteAsync();
+        await LoadScreenDataAsync();
         StatusMessage = "Transaction deleted.";
+    }
+
+    private async Task LoadScreenDataAsync()
+    {
+        Categories = await ListCategories.ExecuteAsync();
+        Transactions = await GetTransactions.ExecuteAsync();
+        await LoadSummaryAsync();
+    }
+
+    private async Task LoadSummaryAsync()
+    {
+        try
+        {
+            Summary = await GetMonthlySummary.ExecuteAsync(
+                new GetMonthlySummaryRequest(SelectedYear, SelectedMonth));
+            SummaryErrorMessage = null;
+        }
+        catch (DomainValidationException exception)
+        {
+            SummaryErrorMessage = exception.Message;
+        }
     }
 
     private string GetCategoryName(Guid categoryId)

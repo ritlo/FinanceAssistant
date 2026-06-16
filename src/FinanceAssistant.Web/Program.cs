@@ -1,5 +1,6 @@
 using FinanceAssistant.Application.Finance.Categories;
 using FinanceAssistant.Application.Finance.Categories.ListCategories;
+using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary;
 using FinanceAssistant.Application.Finance.Transactions;
 using FinanceAssistant.Application.Finance.Transactions.DeleteTransaction;
 using FinanceAssistant.Application.Finance.Transactions.GetTransactions;
@@ -31,6 +32,7 @@ builder.Services.AddScoped<LogTransactionUseCase>();
 builder.Services.AddScoped<GetTransactionsUseCase>();
 builder.Services.AddScoped<UpdateTransactionUseCase>();
 builder.Services.AddScoped<DeleteTransactionUseCase>();
+builder.Services.AddScoped<GetMonthlySummaryUseCase>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

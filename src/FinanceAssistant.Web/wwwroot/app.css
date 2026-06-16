@@ -127,6 +127,85 @@ button {
     }
 }
 
+.monthly-summary {
+    margin-top: 32px;
+    padding-top: 22px;
+    border-top: 1px solid #c9c9c2;
+}
+
+.summary-header {
+    display: flex;
+    gap: 18px;
+    align-items: end;
+    justify-content: space-between;
+}
+
+.summary-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.summary-header p {
+    margin: 4px 0 0;
+    color: #525252;
+}
+
+.summary-controls {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+}
+
+.summary-controls input {
+    width: 96px;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding: 14px 0;
+    border-top: 1px solid #e0e0dc;
+    border-bottom: 1px solid #e0e0dc;
+}
+
+.summary-total strong,
+.summary-category-row strong {
+    color: #9b1c1c;
+}
+
+.summary-categories {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.summary-category-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.empty-state {
+    margin: 12px 0 0;
+    color: #525252;
+}
+
+@media (max-width: 760px) {
+    .summary-header,
+    .summary-controls {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .summary-controls input,
+    .summary-controls button {
+        width: 100%;
+    }
+}
+
 .transaction-list {
     margin-top: 32px;
     padding-top: 22px;
