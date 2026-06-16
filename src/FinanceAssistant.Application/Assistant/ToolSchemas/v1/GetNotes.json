@@ -1,0 +1,10 @@
+{
+  "name": "GetNotes",
+  "kind": "read",
+  "description": "Read notes for the server-resolved local profile.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

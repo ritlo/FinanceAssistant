@@ -1,0 +1,17 @@
+{
+  "name": "ProposeTransaction",
+  "kind": "writeProposal",
+  "description": "Propose a transaction write. Confirmation is required before persistence.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "amount": { "type": "number" },
+      "description": { "type": "string" },
+      "date": { "type": "string", "format": "date" },
+      "transactionType": { "type": "string" },
+      "categoryName": { "type": "string" }
+    },
+    "required": [ "amount", "description", "date" ]
+  }
+}

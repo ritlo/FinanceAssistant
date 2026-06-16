@@ -1,0 +1,14 @@
+{
+  "name": "GetMonthlySummary",
+  "kind": "read",
+  "description": "Read a monthly income and expense summary for the server-resolved local profile.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "year": { "type": "integer" },
+      "month": { "type": "integer", "minimum": 1, "maximum": 12 }
+    },
+    "required": [ "year", "month" ]
+  }
+}

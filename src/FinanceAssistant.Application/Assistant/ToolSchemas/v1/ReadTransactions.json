@@ -1,0 +1,10 @@
+{
+  "name": "ReadTransactions",
+  "kind": "read",
+  "description": "Read transactions for the server-resolved local profile.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

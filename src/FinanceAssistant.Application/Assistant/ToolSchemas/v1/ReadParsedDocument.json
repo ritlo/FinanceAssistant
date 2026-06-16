@@ -1,0 +1,13 @@
+{
+  "name": "ReadParsedDocument",
+  "kind": "read",
+  "description": "Read untrusted extracted text for a parsed document owned by the server-resolved local profile.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "documentId": { "type": "string", "format": "uuid" }
+    },
+    "required": [ "documentId" ]
+  }
+}
