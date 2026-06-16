@@ -1,0 +1,44 @@
+@page "/assistant"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.Assistant
+@inject IAssistantModelClient AssistantModelClient
+
+<PageTitle>Assistant</PageTitle>
+
+<main class="assistant-shell">
+    <section class="assistant-status">
+        <div>
+            <h1>Assistant</h1>
+            <p class="page-kicker">Local-first model configuration for read tools, grounded advice, and confirmed proposals.</p>
+        </div>
+
+        <dl class="assistant-config">
+            <div>
+                <dt>Endpoint</dt>
+                <dd>@Disclosure.Endpoint</dd>
+            </div>
+            <div>
+                <dt>Model</dt>
+                <dd>@Disclosure.Model</dd>
+            </div>
+            <div>
+                <dt>Location</dt>
+                <dd>@(Disclosure.IsRemoteEndpoint ? "Remote" : "Local")</dd>
+            </div>
+        </dl>
+
+        @if (Disclosure.RequiresRemoteDisclosure)
+        {
+            <p class="validation-message">@Disclosure.WarningMessage</p>
+        }
+    </section>
+</main>
+
+@code {
+    private AssistantConfigurationDisclosure Disclosure { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Disclosure = AssistantModelClient.GetConfigurationDisclosure();
+    }
+}

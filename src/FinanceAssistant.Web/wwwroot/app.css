@@ -363,6 +363,44 @@ button {
     padding: 32px 20px;
 }
 
+.assistant-shell {
+    display: grid;
+    gap: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+.assistant-status {
+    display: grid;
+    gap: 16px;
+}
+
+.assistant-config {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.assistant-config div {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
+.assistant-config dt {
+    font-weight: 700;
+}
+
+.assistant-config dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
 .documents-entry,
 .documents-list {
     display: grid;

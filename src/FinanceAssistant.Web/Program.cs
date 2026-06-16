@@ -1,3 +1,4 @@
+using FinanceAssistant.Application.Assistant;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.CreateDocumentRecord;
@@ -24,6 +25,7 @@ using FinanceAssistant.Application.PersonalRecords.Reminders.DeleteReminder;
 using FinanceAssistant.Application.PersonalRecords.Reminders.ListReminders;
 using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderPaid;
 using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderUnpaid;
+using FinanceAssistant.Infrastructure.Assistant;
 using FinanceAssistant.Infrastructure.Common;
 using FinanceAssistant.Infrastructure.Documents;
 using FinanceAssistant.Infrastructure.Finance.Categories;
@@ -45,6 +47,16 @@ var dataOptions = new FinanceAssistantDataOptions
     Currency = builder.Configuration["FinanceAssistant:Currency"] ?? string.Empty,
 };
 builder.Services.AddSingleton(dataOptions);
+builder.Services.AddSingleton(new AssistantModelOptions
+{
+    Endpoint = builder.Configuration["FinanceAssistant:Assistant:Endpoint"]
+        ?? AssistantModelOptions.DefaultEndpoint,
+    Model = builder.Configuration["FinanceAssistant:Assistant:Model"]
+        ?? AssistantModelOptions.DefaultModel,
+    ApiKey = builder.Configuration["FinanceAssistant:Assistant:ApiKey"],
+    AllowRemote = bool.TryParse(builder.Configuration["FinanceAssistant:Assistant:AllowRemote"], out var allowRemote)
+        && allowRemote,
+});
 builder.Services.AddSingleton<LiteDbSchemaInitializer>();
 builder.Services.AddScoped<ICurrentProfileProvider, LiteDbCurrentProfileProvider>();
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -57,6 +69,7 @@ builder.Services.AddScoped<IDocumentParsedContentRepository, LiteDbParsedDocumen
 builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
 builder.Services.AddScoped<IDocumentParser, LocalDocumentParser>();
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
+builder.Services.AddHttpClient<IAssistantModelClient, OpenAiCompatibleAssistantModelClient>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
 builder.Services.AddScoped<GetTransactionsUseCase>();
