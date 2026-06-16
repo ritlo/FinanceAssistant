@@ -8,4 +8,5 @@ internal static class LiteDbCollectionNames
     public const string CategorizationRules = "categorization_rules";
     public const string Transactions = "transactions";
     public const string Notes = "notes";
+    public const string PaymentReminders = "payment_reminders";
 }

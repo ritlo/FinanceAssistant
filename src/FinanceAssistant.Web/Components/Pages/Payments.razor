@@ -1,0 +1,159 @@
+@page "/payments"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.PersonalRecords.Reminders
+@using FinanceAssistant.Application.PersonalRecords.Reminders.CreateReminder
+@using FinanceAssistant.Application.PersonalRecords.Reminders.DeleteReminder
+@using FinanceAssistant.Application.PersonalRecords.Reminders.ListReminders
+@using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderPaid
+@using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderUnpaid
+@using FinanceAssistant.Domain.Common
+@inject CreateReminderUseCase CreateReminder
+@inject ListRemindersUseCase ListReminders
+@inject DeleteReminderUseCase DeleteReminder
+@inject MarkReminderPaidUseCase MarkReminderPaid
+@inject MarkReminderUnpaidUseCase MarkReminderUnpaid
+
+<PageTitle>Payments</PageTitle>
+
+<main class="payments-shell">
+    <section class="payments-entry">
+        <div>
+            <h1>Payments</h1>
+            <p class="page-kicker">Track local payment reminders by due date and paid state.</p>
+        </div>
+
+        <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+            <div class="payment-grid">
+                <label>
+                    <span>Content</span>
+                    <input @bind="Content" />
+                </label>
+                <label>
+                    <span>Due date</span>
+                    <input type="date" @bind="DueDate" />
+                </label>
+            </div>
+
+            <button type="submit">Add reminder</button>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <p class="status-message">@StatusMessage</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <p class="validation-message">@ErrorMessage</p>
+        }
+    </section>
+
+    <section class="payments-list">
+        <h2>Payment reminders</h2>
+
+        @if (Reminders.Any())
+        {
+            @foreach (var reminder in Reminders)
+            {
+                <div class="payment-row" @key="reminder.Id">
+                    <div class="payment-details">
+                        <span class="payment-due">@reminder.DueDate.ToString("yyyy-MM-dd")</span>
+                        <span class="payment-content">@reminder.Content</span>
+                        <span class="payment-state @(reminder.IsPaid ? "payment-paid" : "payment-unpaid")">
+                            @(reminder.IsPaid ? "Paid" : "Unpaid")
+                        </span>
+                    </div>
+                    <div class="payment-actions">
+                        @if (reminder.IsPaid)
+                        {
+                            <button type="button" class="edit-button" @onclick="() => MarkUnpaidAsync(reminder.Id)">Mark unpaid</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="edit-button" @onclick="() => MarkPaidAsync(reminder.Id)">Mark paid</button>
+                        }
+                        <button type="button" class="delete-button" @onclick="() => DeleteAsync(reminder.Id)">Delete</button>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="empty-state">No payment reminders recorded.</p>
+        }
+    </section>
+</main>
+
+@code {
+    private string Content { get; set; } = string.Empty;
+
+    private DateOnly DueDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    private IReadOnlyList<PaymentReminderResult> Reminders { get; set; } = [];
+
+    private string? StatusMessage { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRemindersAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        await RunAsync(async () =>
+        {
+            await CreateReminder.ExecuteAsync(new CreateReminderRequest(Content, DueDate));
+            Content = string.Empty;
+            StatusMessage = "Reminder added.";
+        });
+    }
+
+    private async Task MarkPaidAsync(Guid id)
+    {
+        await RunAsync(async () =>
+        {
+            await MarkReminderPaid.ExecuteAsync(new MarkReminderPaidRequest(id));
+            StatusMessage = "Reminder marked paid.";
+        });
+    }
+
+    private async Task MarkUnpaidAsync(Guid id)
+    {
+        await RunAsync(async () =>
+        {
+            await MarkReminderUnpaid.ExecuteAsync(new MarkReminderUnpaidRequest(id));
+            StatusMessage = "Reminder marked unpaid.";
+        });
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        await RunAsync(async () =>
+        {
+            await DeleteReminder.ExecuteAsync(new DeleteReminderRequest(id));
+            StatusMessage = "Reminder deleted.";
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+            ErrorMessage = null;
+            await LoadRemindersAsync();
+        }
+        catch (DomainValidationException exception)
+        {
+            StatusMessage = null;
+            ErrorMessage = exception.Message;
+        }
+    }
+
+    private async Task LoadRemindersAsync()
+    {
+        Reminders = await ListReminders.ExecuteAsync();
+    }
+}

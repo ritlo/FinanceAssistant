@@ -55,12 +55,23 @@ body {
     padding: 32px 20px;
 }
 
+.payments-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
 .transaction-entry {
     display: grid;
     gap: 22px;
 }
 
 .notes-entry {
+    display: grid;
+    gap: 22px;
+}
+
+.payments-entry {
     display: grid;
     gap: 22px;
 }
@@ -72,6 +83,12 @@ body {
 }
 
 .notes-entry h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.payments-entry h1 {
     margin: 0;
     font-size: 2rem;
     font-weight: 700;
@@ -90,6 +107,12 @@ form {
 .transaction-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.payment-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
     gap: 14px;
 }
 
@@ -246,7 +269,19 @@ button {
     border-top: 1px solid #c9c9c2;
 }
 
+.payments-list {
+    margin-top: 32px;
+    padding-top: 22px;
+    border-top: 1px solid #c9c9c2;
+}
+
 .notes-list h2 {
+    margin: 0 0 16px;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.payments-list h2 {
     margin: 0 0 16px;
     font-size: 1.25rem;
     font-weight: 600;
@@ -273,6 +308,51 @@ button {
 .note-row p {
     margin: 0;
     white-space: pre-wrap;
+}
+
+.payment-row {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 6px;
+}
+
+.payment-details {
+    display: grid;
+    grid-template-columns: 110px 1fr 90px;
+    gap: 12px;
+    align-items: center;
+}
+
+.payment-due {
+    color: #525252;
+    font-size: 0.85rem;
+}
+
+.payment-content {
+    font-weight: 500;
+}
+
+.payment-state {
+    font-weight: 700;
+    text-align: right;
+}
+
+.payment-paid {
+    color: #245c49;
+}
+
+.payment-unpaid {
+    color: #9b1c1c;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
 }
 
 .transaction-row {
@@ -366,5 +446,14 @@ button {
 
     .note-row {
         display: grid;
+    }
+
+    .payment-grid,
+    .payment-details {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-state {
+        text-align: left;
     }
 }
