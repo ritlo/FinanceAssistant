@@ -39,6 +39,7 @@ using FinanceAssistant.Infrastructure.Persistence;
 using FinanceAssistant.Infrastructure.PersonalRecords.Notes;
 using FinanceAssistant.Infrastructure.PersonalRecords.Reminders;
 using FinanceAssistant.Web.Components;
+using FinanceAssistant.Web.Finance.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,8 +74,11 @@ builder.Services.AddScoped<IDocumentParsedContentRepository, LiteDbParsedDocumen
 builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
 builder.Services.AddScoped<IDocumentParser, LocalDocumentParser>();
 builder.Services.AddScoped<IAssistantConfirmationRepository, LiteDbAssistantConfirmationRepository>();
-builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
+builder.Services.AddSingleton<InProcessTransactionChangeNotifier>();
+builder.Services.AddSingleton<ITransactionChangeNotifier>(
+    services => services.GetRequiredService<InProcessTransactionChangeNotifier>());
 builder.Services.AddHttpClient<IAssistantModelClient, OpenAiCompatibleAssistantModelClient>();
+builder.Services.AddScoped<TransactionDashboardState>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
 builder.Services.AddScoped<GetTransactionsUseCase>();
