@@ -109,6 +109,11 @@ public sealed partial class LiteDbSchemaInitializer
         {
             throw new InvalidOperationException("FinanceAssistant database path is required.");
         }
+
+        if (string.IsNullOrWhiteSpace(options.DocumentTemporaryDirectoryPath))
+        {
+            throw new InvalidOperationException("FinanceAssistant document temporary directory path is required.");
+        }
     }
 
     [GeneratedRegex("^[A-Z]{3}$", RegexOptions.CultureInvariant)]

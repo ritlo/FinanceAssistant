@@ -1,4 +1,8 @@
 using FinanceAssistant.Application.Common;
+using FinanceAssistant.Application.Documents;
+using FinanceAssistant.Application.Documents.CreateDocumentRecord;
+using FinanceAssistant.Application.Documents.ListDocuments;
+using FinanceAssistant.Application.Documents.UpdateDocumentStatus;
 using FinanceAssistant.Application.Finance.Categories;
 using FinanceAssistant.Application.Finance.Categories.ListCategories;
 using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary;
@@ -19,6 +23,7 @@ using FinanceAssistant.Application.PersonalRecords.Reminders.ListReminders;
 using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderPaid;
 using FinanceAssistant.Application.PersonalRecords.Reminders.MarkReminderUnpaid;
 using FinanceAssistant.Infrastructure.Common;
+using FinanceAssistant.Infrastructure.Documents;
 using FinanceAssistant.Infrastructure.Finance.Categories;
 using FinanceAssistant.Infrastructure.Finance.Transactions;
 using FinanceAssistant.Infrastructure.Identity;
@@ -33,6 +38,8 @@ var dataOptions = new FinanceAssistantDataOptions
 {
     DatabasePath = builder.Configuration["FinanceAssistant:DatabasePath"]
         ?? FinanceAssistantDataOptions.DefaultDatabasePath(),
+    DocumentTemporaryDirectoryPath = builder.Configuration["FinanceAssistant:DocumentTemporaryDirectoryPath"]
+        ?? FinanceAssistantDataOptions.DefaultDocumentTemporaryDirectoryPath(),
     Currency = builder.Configuration["FinanceAssistant:Currency"] ?? string.Empty,
 };
 builder.Services.AddSingleton(dataOptions);
@@ -43,6 +50,8 @@ builder.Services.AddScoped<ICategoryRepository, LiteDbCategoryRepository>();
 builder.Services.AddScoped<ITransactionRepository, LiteDbTransactionRepository>();
 builder.Services.AddScoped<INoteRepository, LiteDbNoteRepository>();
 builder.Services.AddScoped<IReminderRepository, LiteDbPaymentReminderRepository>();
+builder.Services.AddScoped<IDocumentMetadataRepository, LiteDbDocumentMetadataRepository>();
+builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
 builder.Services.AddSingleton<ITransactionChangeNotifier, InProcessTransactionChangeNotifier>();
 builder.Services.AddScoped<ListCategoriesUseCase>();
 builder.Services.AddScoped<LogTransactionUseCase>();
@@ -58,6 +67,9 @@ builder.Services.AddScoped<ListRemindersUseCase>();
 builder.Services.AddScoped<DeleteReminderUseCase>();
 builder.Services.AddScoped<MarkReminderPaidUseCase>();
 builder.Services.AddScoped<MarkReminderUnpaidUseCase>();
+builder.Services.AddScoped<CreateDocumentRecordUseCase>();
+builder.Services.AddScoped<ListDocumentsUseCase>();
+builder.Services.AddScoped<UpdateDocumentStatusUseCase>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
