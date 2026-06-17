@@ -35,6 +35,10 @@ ambiguous requirements, risk reviews, and final acceptance. Use local model
 edits, focused low-risk tests, formatting fixes, repository inspection
 summaries, validation command runs, and low-risk documentation updates.
 
+For Qwen work, always phrase the request as a `workflow`. The word `workflow`
+is intentional because `pi-dynamic-workflows` uses it as the trigger to arm
+subagent routing.
+
 When `pi-dynamic-workflows` is available, delegate simple work to a workflow
 subagent on Qwen, using either the configured small tier or exact model
 `Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf`. Keep `gpt-5.5` for the supervising plan,
