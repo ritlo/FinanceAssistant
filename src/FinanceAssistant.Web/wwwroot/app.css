@@ -1342,6 +1342,76 @@ a.secondary-button {
 	padding: 16px;
 }
 
+.summary-page {
+	display: grid;
+	gap: 22px;
+}
+
+.month-selector-panel {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+}
+
+.month-pill {
+	min-height: 46px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	padding: 0 14px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 850;
+	cursor: pointer;
+}
+
+.month-pill.active {
+	border-color: #fff;
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.month-amount {
+	font-size: 12px;
+	opacity: 0.86;
+}
+
+.monthly-summary-panel .summary-strip {
+	grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+}
+
+.summary-feature-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	align-items: baseline;
+}
+
+.summary-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.net-balance strong {
+	font-size: 24px;
+}
+
+.summary-category-fill {
+	width: var(--target-width);
+	animation: monthly-summary-fill 1s ease both;
+}
+
+@keyframes monthly-summary-fill {
+	from {
+		width: 0;
+	}
+
+	to {
+		width: var(--target-width);
+	}
+}
+
 @media (max-width: 1120px) {
 	.assistant-stage {
 		grid-template-columns: 1fr;
@@ -1359,8 +1429,18 @@ a.secondary-button {
 
 @media (max-width: 760px) {
 	.summary-strip,
-	.composer-row {
+	.composer-row,
+	.monthly-summary-panel .summary-strip,
+	.summary-stats {
 		grid-template-columns: 1fr;
+	}
+
+	.month-selector-panel {
+		align-items: stretch;
+	}
+
+	.month-pill {
+		justify-content: center;
 	}
 
 	.transaction-table,

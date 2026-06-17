@@ -1,0 +1,129 @@
+@using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary
+@using FinanceAssistant.Application.Finance.Transactions
+@using FinanceAssistant.Domain.Finance.Transactions
+@using Microsoft.AspNetCore.Components
+
+<section class="panel monthly-summary-panel" id="monthly-summary" @key="SummaryKey">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h2>Monthly summary</h2>
+            <p>@SummaryPeriodLabel. Read-only context available to the assistant.</p>
+        </div>
+        <div class="top-actions">
+            <span class="pill">Read-only</span>
+        </div>
+    </div>
+
+    @if (Summary is not null)
+    {
+        <div class="summary-strip">
+            <div class="summary-feature">
+                <div class="summary-feature-header">
+                    <span>Total expenses</span>
+                    <strong class="amount negative">@FormatAmount(Summary.ExpenseTotal)</strong>
+                </div>
+
+                @if (Summary.Categories.Any())
+                {
+                    <div class="mini-bars" aria-label="Expense categories">
+                        @foreach (var category in Summary.Categories.Take(4))
+                        {
+                            <div class="bar-row" @key="category.CategoryId">
+                                <span>@category.CategoryName</span>
+                                <div class="track">
+                                    <div class="fill summary-category-fill" style="--target-width: @GetCategoryWidth(category.Total);"></div>
+                                </div>
+                                <span>@FormatAmount(category.Total)</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="empty-state">No expenses recorded for this month.</p>
+                }
+            </div>
+
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <span>Expense categories</span>
+                    <strong>@Summary.Categories.Count</strong>
+                </div>
+                <div class="summary-stat">
+                    <span>Recent transactions</span>
+                    <strong>@MonthlyTransactions.Count</strong>
+                </div>
+                <div class="summary-stat net-balance">
+                    <span>Net balance</span>
+                    <strong class="amount @(NetBalance < 0 ? "negative" : "positive")">@FormatSignedAmount(NetBalance)</strong>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="summary-strip">
+            <div class="summary-feature">
+                <span>Monthly summary</span>
+                <strong>Unavailable</strong>
+                <p class="validation-message">@(ErrorMessage ?? "No monthly summary loaded yet.")</p>
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public GetMonthlySummaryResult? Summary { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TransactionResult> Transactions { get; set; } = [];
+
+    [Parameter]
+    public string SelectedMonthName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    private string SummaryKey => Summary is null ? "missing" : $"{Summary.Year:0000}-{Summary.Month:00}";
+
+    private string SummaryPeriodLabel => Summary is null
+        ? SelectedMonthName
+        : $"{SelectedMonthName} {Summary.Year}";
+
+    private IReadOnlyList<TransactionResult> MonthlyTransactions => Summary is null
+        ? []
+        : Transactions
+            .Where(transaction => transaction.Date.Year == Summary.Year && transaction.Date.Month == Summary.Month)
+            .ToArray();
+
+    private decimal NetBalance => MonthlyTransactions.Sum(transaction => transaction.Type == TransactionType.Income
+        ? transaction.Amount
+        : -transaction.Amount);
+
+    private string GetCategoryWidth(decimal total)
+    {
+        var maxTotal = Summary?.Categories.Count > 0
+            ? Summary.Categories.Max(category => category.Total)
+            : 0m;
+
+        if (maxTotal <= 0m)
+        {
+            return "0%";
+        }
+
+        var percent = Math.Clamp((double)(total / maxTotal * 100m), 6d, 100d);
+        return $"{percent:0.#}%";
+    }
+
+    private static string FormatAmount(decimal amount)
+    {
+        return $"{amount:0.00}";
+    }
+
+    private static string FormatSignedAmount(decimal amount)
+    {
+        var sign = amount < 0 ? "-" : "+";
+        return $"{sign}{Math.Abs(amount):0.00}";
+    }
+}

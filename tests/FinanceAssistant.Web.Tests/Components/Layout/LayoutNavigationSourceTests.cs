@@ -7,7 +7,7 @@ public sealed class LayoutNavigationSourceTests
     public static TheoryData<string, string> RequiredNavigationItems => new()
     {
         { "href=\"/assistant\"", "Assistant" },
-        { "href=\"/assistant#monthly-summary\"", "Summary" },
+        { "href=\"/summary\"", "Summary" },
         { "href=\"/transactions/manual\"", "Manual transaction" },
         { "href=\"/documents\"", "Documents" },
         { "href=\"/notes\"", "Notes" },

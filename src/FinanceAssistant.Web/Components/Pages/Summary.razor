@@ -1,0 +1,173 @@
+@page "/summary"
+@rendermode InteractiveServer
+@implements IDisposable
+@using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary
+@using FinanceAssistant.Application.Finance.Transactions
+@using FinanceAssistant.Domain.Finance.Transactions
+@using FinanceAssistant.Web.Components.Finance.Summaries
+@using FinanceAssistant.Web.Finance.Transactions
+@inject TransactionDashboardState DashboardState
+
+<PageTitle>Monthly summary</PageTitle>
+
+<main class="summary-page">
+    <section class="month-selector-panel" aria-label="Summary months">
+        @foreach (var option in MonthOptions)
+        {
+            <button type="button"
+                    class="month-pill @(option.IsSelected ? "active" : null)"
+                    style="@option.Style"
+                    @onclick="() => SelectMonthAsync(option.Year, option.Month)">
+                @option.Label
+                <span class="month-amount">@option.AmountLabel</span>
+            </button>
+        }
+    </section>
+
+    <MonthlySummaryPanel Summary="@Summary"
+                         Transactions="@Transactions"
+                         SelectedMonthName="@SelectedMonthName"
+                         ErrorMessage="@DashboardState.SummaryErrorMessage" />
+
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Recent transactions</h2>
+                <p>Transactions for @SelectedMonthName @SelectedYear.</p>
+            </div>
+            <a class="secondary-button" href="/transactions/manual">View all</a>
+        </div>
+
+        @if (MonthlyTransactions.Any())
+        {
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in MonthlyTransactions.Take(8))
+                    {
+                        <tr @key="transaction.Id">
+                            <td>@transaction.Date.ToString("yyyy-MM-dd")</td>
+                            <td><div class="desc">@transaction.Description</div></td>
+                            <td><span class="tag">@transaction.CategoryName</span></td>
+                            <td>
+                                <span class="amount @(transaction.Type == TransactionType.Expense ? "negative" : "positive")">
+                                    @FormatSignedAmount(transaction)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="empty-state panel-empty">No transactions recorded for this month.</p>
+        }
+    </section>
+</main>
+
+@code {
+    private IReadOnlyList<TransactionResult> Transactions => DashboardState.Transactions;
+
+    private GetMonthlySummaryResult? Summary => DashboardState.Summary;
+
+    private int SelectedYear => DashboardState.SelectedYear;
+
+    private int SelectedMonth => DashboardState.SelectedMonth;
+
+    private string SelectedMonthName => string.IsNullOrWhiteSpace(DashboardState.SelectedMonthName)
+        ? new DateOnly(DashboardState.SelectedYear, DashboardState.SelectedMonth, 1).ToString("MMMM")
+        : DashboardState.SelectedMonthName;
+
+    private IReadOnlyList<TransactionResult> MonthlyTransactions => Transactions
+        .Where(transaction => transaction.Date.Year == SelectedYear && transaction.Date.Month == SelectedMonth)
+        .ToArray();
+
+    private IReadOnlyList<MonthOption> MonthOptions
+    {
+        get
+        {
+            var options = Transactions
+                .GroupBy(transaction => new { transaction.Date.Year, transaction.Date.Month })
+                .Select(group => CreateMonthOption(group.Key.Year, group.Key.Month, group.ToArray()))
+                .OrderBy(option => option.Year)
+                .ThenBy(option => option.Month)
+                .ToList();
+
+            if (!options.Any(option => option.Year == SelectedYear && option.Month == SelectedMonth))
+            {
+                options.Add(CreateMonthOption(SelectedYear, SelectedMonth, []));
+                options = options.OrderBy(option => option.Year).ThenBy(option => option.Month).ToList();
+            }
+
+            return options;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.StateChanged += OnDashboardStateChangedAsync;
+        await DashboardState.InitializeAsync();
+    }
+
+    private async Task SelectMonthAsync(int year, int month)
+    {
+        await DashboardState.SetSummaryPeriodAsync(year, month);
+    }
+
+    private MonthOption CreateMonthOption(int year, int month, IReadOnlyList<TransactionResult> transactions)
+    {
+        var balance = transactions.Sum(transaction => transaction.Type == TransactionType.Income
+            ? transaction.Amount
+            : -transaction.Amount);
+        var isSelected = year == SelectedYear && month == SelectedMonth;
+        var color = balance < 0 ? "var(--red)" : balance > 0 ? "var(--green)" : "var(--muted)";
+        var alpha = balance == 0m ? 0.10m : Math.Clamp(Math.Abs(balance) / 10000m, 0.12m, 0.35m);
+        var rgba = balance < 0 ? $"rgba(255,116,109,{alpha:0.##})" : balance > 0 ? $"rgba(79,209,139,{alpha:0.##})" : "rgba(145,162,154,0.1)";
+
+        return new MonthOption(
+            year,
+            month,
+            new DateOnly(year, month, 1).ToString("MMM"),
+            balance == 0m ? "—" : FormatSignedAmount(balance),
+            $"background:{rgba};color:{color};",
+            isSelected);
+    }
+
+    private static string FormatSignedAmount(TransactionResult transaction)
+    {
+        var signedAmount = transaction.Type == TransactionType.Income ? transaction.Amount : -transaction.Amount;
+        return FormatSignedAmount(signedAmount);
+    }
+
+    private static string FormatSignedAmount(decimal amount)
+    {
+        var sign = amount < 0 ? "-" : "+";
+        return $"{sign}{Math.Abs(amount):0}";
+    }
+
+    private Task OnDashboardStateChangedAsync()
+    {
+        return InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DashboardState.StateChanged -= OnDashboardStateChangedAsync;
+    }
+
+    private sealed record MonthOption(
+        int Year,
+        int Month,
+        string Label,
+        string AmountLabel,
+        string Style,
+        bool IsSelected);
+}
