@@ -1,9 +1,97 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="/assistant">
+            <span class="brand-mark">FA</span>
+            <span>
+                <strong>FinanceAssistant</strong>
+                <small>Private local workspace</small>
+            </span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+            <NavLink class="nav-item" href="/assistant" Match="NavLinkMatch.All">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+                </svg>
+                <span>Assistant</span>
+            </NavLink>
+            <a class="nav-item" href="/assistant#monthly-summary">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19V5" />
+                    <path d="M4 19h16" />
+                    <path d="M8 16v-5" />
+                    <path d="M12 16V8" />
+                    <path d="M16 16v-3" />
+                </svg>
+                <span>Summary</span>
+            </a>
+            <NavLink class="nav-item" href="/" Match="NavLinkMatch.All">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 7h10" />
+                    <path d="M7 12h10" />
+                    <path d="M7 17h10" />
+                    <path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                </svg>
+                <span>Manual transaction</span>
+            </NavLink>
+            <NavLink class="nav-item" href="/documents">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 7h10" />
+                    <path d="M7 12h10" />
+                    <path d="M7 17h6" />
+                    <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                </svg>
+                <span>Documents</span>
+            </NavLink>
+            <NavLink class="nav-item" href="/notes">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 8h12" />
+                    <path d="M6 12h12" />
+                    <path d="M6 16h7" />
+                    <path d="M4 4h16v16H4z" />
+                </svg>
+                <span>Notes</span>
+            </NavLink>
+            <NavLink class="nav-item" href="/payments">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 6v6l4 2" />
+                    <circle cx="12" cy="12" r="9" />
+                </svg>
+                <span>Reminders</span>
+            </NavLink>
+            <NavLink class="nav-item" href="/assistant/confirmations">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4" />
+                    <path d="M12 3 4 6v6c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V6z" />
+                </svg>
+                <span>Confirmations</span>
+            </NavLink>
+        </nav>
+
+        <div class="system-card">
+            <strong><span class="status-dot"></span>Local-first mode</strong>
+            <span>Remote model calls require explicit configuration and disclosure.</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-title">
+                <h1>Local finance assistant</h1>
+                <p>Ask first. Confirm writes. Keep financial data on this machine by default.</p>
+            </div>
+        </header>
+
+        <div class="content">
+            @Body
+        </div>
+    </main>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span class="dismiss">x</span>
 </div>
