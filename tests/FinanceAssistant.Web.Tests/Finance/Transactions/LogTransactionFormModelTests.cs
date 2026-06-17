@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FinanceAssistant.Domain.Finance.Transactions;
 using FinanceAssistant.Web.Finance.Transactions.LogTransaction;
 
@@ -42,5 +43,27 @@ public sealed class LogTransactionFormModelTests
         var request = model.ToRequest();
 
         Assert.Null(request.CategoryId);
+    }
+
+    [Fact]
+    public void ValidationPreservesPositiveAmountAndRequiredDescriptionRules()
+    {
+        var model = new LogTransactionFormModel
+        {
+            Amount = 0m,
+            Description = string.Empty,
+        };
+
+        var results = Validate(model);
+
+        Assert.Contains(results, result => result.MemberNames.Contains(nameof(LogTransactionFormModel.Amount)));
+        Assert.Contains(results, result => result.MemberNames.Contains(nameof(LogTransactionFormModel.Description)));
+    }
+
+    private static List<ValidationResult> Validate(LogTransactionFormModel model)
+    {
+        var results = new List<ValidationResult>();
+        Validator.TryValidateObject(model, new ValidationContext(model), results, validateAllProperties: true);
+        return results;
     }
 }

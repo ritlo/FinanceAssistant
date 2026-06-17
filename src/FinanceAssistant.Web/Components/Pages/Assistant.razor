@@ -116,14 +116,14 @@
                             <div class="bubble">@entry.Text</div>
                         </div>
 
-                        @if (entry.Result is { PayloadJson: { Length: > 0 } payloadJson })
+                        @if (entry.Result is not null && AssistantToolPayloadDisplayModel.FromResult(entry.Result) is { } payload)
                         {
                             <div class="tool-card">
                                 <header>
-                                    <span>@(entry.Result.ToolName ?? "Assistant payload")</span>
-                                    <span>@GetToolKindLabel(entry.Result)</span>
+                                    <span>@payload.ToolName</span>
+                                    <span>@payload.KindLabel</span>
                                 </header>
-                                <pre>@payloadJson</pre>
+                                <pre>@payload.Text</pre>
                             </div>
                         }
                     }
@@ -175,14 +175,14 @@
                     <p>@string.Join(", ", AssistantWorkspaceDisplayModel.ConfirmedWriteTools) create typed previews only. Nothing writes until explicit confirmation.</p>
                 </div>
 
-                @if (Result?.RequiresConfirmation == true)
+                @if (Result is not null && AssistantProposalPreviewModel.FromResult(Result) is { } proposal)
                 {
                     <div class="side-section">
                         <div class="proposal-card">
                             <strong>Pending confirmation</strong>
-                            <span>@Result.ToolName</span>
-                            <code>token @Result.ConfirmationToken</code>
-                            <code>fingerprint @Result.OperationFingerprint</code>
+                            <span>@proposal.ToolName</span>
+                            <code>@proposal.TokenDisplay</code>
+                            <code>@proposal.FingerprintDisplay</code>
                             <a class="primary-button" href="/assistant/confirmations">Review proposals</a>
                         </div>
                     </div>
@@ -335,11 +335,6 @@
     {
         var sign = transaction.Type == TransactionType.Expense ? "-" : "+";
         return $"{sign}{transaction.Amount:0.00}";
-    }
-
-    private static string GetToolKindLabel(ProcessAssistantMessageResult result)
-    {
-        return result.RequiresConfirmation ? "Needs confirmation" : "Read-only";
     }
 
     private Task OnDashboardStateChangedAsync()

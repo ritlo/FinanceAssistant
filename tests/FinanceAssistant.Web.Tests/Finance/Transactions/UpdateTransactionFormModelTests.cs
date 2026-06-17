@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FinanceAssistant.Domain.Finance.Transactions;
 using FinanceAssistant.Web.Finance.Transactions.UpdateTransaction;
 
@@ -46,5 +47,27 @@ public sealed class UpdateTransactionFormModelTests
         var request = model.ToRequest();
 
         Assert.Null(request.CategoryId);
+    }
+
+    [Fact]
+    public void ValidationPreservesPositiveAmountAndRequiredDescriptionRules()
+    {
+        var model = new UpdateTransactionFormModel
+        {
+            Amount = 0m,
+            Description = string.Empty,
+        };
+
+        var results = Validate(model);
+
+        Assert.Contains(results, result => result.MemberNames.Contains(nameof(UpdateTransactionFormModel.Amount)));
+        Assert.Contains(results, result => result.MemberNames.Contains(nameof(UpdateTransactionFormModel.Description)));
+    }
+
+    private static List<ValidationResult> Validate(UpdateTransactionFormModel model)
+    {
+        var results = new List<ValidationResult>();
+        Validator.TryValidateObject(model, new ValidationContext(model), results, validateAllProperties: true);
+        return results;
     }
 }
