@@ -11,53 +11,65 @@
 
 <PageTitle>Notes</PageTitle>
 
-<main class="notes-shell">
-    <section class="notes-entry">
-        <div>
-            <h1>Notes</h1>
-            <p class="page-kicker">Capture local personal records without exposing profile selection.</p>
+<main class="supporting-page notes-shell">
+    <section class="panel notes-entry">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Notes</h2>
+                <p>Capture local personal records without exposing profile selection.</p>
+            </div>
+            <span class="pill">Local record</span>
         </div>
 
-        <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
-            <label class="description-field">
-                <span>Content</span>
-                <textarea @bind="Content" rows="4"></textarea>
-            </label>
+        <div class="panel-body">
+            <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+                <label class="description-field">
+                    <span>Content</span>
+                    <textarea @bind="Content" rows="4"></textarea>
+                </label>
 
-            <button type="submit">Add note</button>
-        </form>
+                <button type="submit" class="primary-button">Add note</button>
+            </form>
 
-        @if (!string.IsNullOrWhiteSpace(StatusMessage))
-        {
-            <p class="status-message">@StatusMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                <p class="status-message">@StatusMessage</p>
+            }
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <p class="validation-message">@ErrorMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <p class="validation-message">@ErrorMessage</p>
+            }
+        </div>
     </section>
 
-    <section class="notes-list">
-        <h2>Recent notes</h2>
+    <section class="panel notes-list">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Recent notes</h2>
+                <p>Stored only for the server-resolved local profile.</p>
+            </div>
+        </div>
 
-        @if (NoteResults.Any())
-        {
-            @foreach (var note in NoteResults)
+        <div class="panel-body list-stack">
+            @if (NoteResults.Any())
             {
-                <div class="note-row" @key="note.Id">
-                    <div>
-                        <time>@note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
-                        <p>@note.Content</p>
+                @foreach (var note in NoteResults)
+                {
+                    <div class="list-row note-row" @key="note.Id">
+                        <div>
+                            <time>@note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
+                            <p>@note.Content</p>
+                        </div>
+                        <button type="button" class="danger-button delete-button" @onclick="() => DeleteAsync(note.Id)">Delete</button>
                     </div>
-                    <button type="button" class="delete-button" @onclick="() => DeleteAsync(note.Id)">Delete</button>
-                </div>
+                }
             }
-        }
-        else
-        {
-            <p class="empty-state">No notes recorded.</p>
-        }
+            else
+            {
+                <p class="empty-state">No notes recorded.</p>
+            }
+        </div>
     </section>
 </main>
 

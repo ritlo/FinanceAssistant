@@ -18,67 +18,72 @@
 
 <PageTitle>Manual transaction</PageTitle>
 
-<main class="transaction-shell">
-    <section class="transaction-entry">
-        <div>
-            <h1>Manual transaction</h1>
-            <p class="page-kicker">Log income and expenses against deterministic local categories without using the assistant.</p>
+<main class="supporting-page transaction-shell">
+    <section class="panel transaction-entry">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Manual transaction</h2>
+                <p>Log income and expenses against deterministic local categories without using the assistant.</p>
+            </div>
+            <span class="pill">Manual entry</span>
         </div>
 
-        <EditForm Model="Form" OnValidSubmit="SubmitAsync" FormName="log-transaction">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+        <div class="panel-body">
+            <EditForm Model="Form" OnValidSubmit="SubmitAsync" FormName="log-transaction">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-            <div class="transaction-grid">
-                <label>
-                    <span>Type</span>
-                    <InputSelect @bind-Value="Form.Type">
-                        <option value="@TransactionType.Expense">Expense</option>
-                        <option value="@TransactionType.Income">Income</option>
-                    </InputSelect>
+                <div class="transaction-grid">
+                    <label>
+                        <span>Type</span>
+                        <InputSelect @bind-Value="Form.Type">
+                            <option value="@TransactionType.Expense">Expense</option>
+                            <option value="@TransactionType.Income">Income</option>
+                        </InputSelect>
+                    </label>
+
+                    <label>
+                        <span>Amount</span>
+                        <InputNumber @bind-Value="Form.Amount" />
+                    </label>
+
+                    <label>
+                        <span>Date</span>
+                        <InputDate @bind-Value="Form.Date" />
+                    </label>
+
+                    <label>
+                        <span>Category</span>
+                        <InputSelect @bind-Value="Form.CategoryId">
+                            <option value="">Auto</option>
+                            @foreach (var category in Categories.Where(category => category.TransactionType == Form.Type))
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </InputSelect>
+                    </label>
+                </div>
+
+                <label class="description-field">
+                    <span>Description</span>
+                    <InputText @bind-Value="Form.Description" />
                 </label>
 
-                <label>
-                    <span>Amount</span>
-                    <InputNumber @bind-Value="Form.Amount" />
-                </label>
+                <button type="submit" class="primary-button">Log transaction</button>
+            </EditForm>
 
-                <label>
-                    <span>Date</span>
-                    <InputDate @bind-Value="Form.Date" />
-                </label>
-
-                <label>
-                    <span>Category</span>
-                    <InputSelect @bind-Value="Form.CategoryId">
-                        <option value="">Auto</option>
-                        @foreach (var category in Categories.Where(category => category.TransactionType == Form.Type))
-                        {
-                            <option value="@category.Id">@category.Name</option>
-                        }
-                    </InputSelect>
-                </label>
-            </div>
-
-            <label class="description-field">
-                <span>Description</span>
-                <InputText @bind-Value="Form.Description" />
-            </label>
-
-            <button type="submit">Log transaction</button>
-        </EditForm>
-
-        @if (!string.IsNullOrWhiteSpace(StatusMessage))
-        {
-            <p class="status-message">@StatusMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                <p class="status-message">@StatusMessage</p>
+            }
+        </div>
     </section>
 
     @if (Summary is not null)
     {
-        <section class="monthly-summary">
-            <div class="summary-header">
-                <div>
+        <section class="panel monthly-summary">
+            <div class="panel-header summary-header">
+                <div class="panel-title">
                     <h2>Monthly expenses</h2>
                     <p>@SelectedMonthName @Summary.Year</p>
                 </div>
@@ -91,114 +96,123 @@
                         <span>Year</span>
                         <input type="number" min="1" max="9999" @bind="SelectedYear" />
                     </label>
-                    <button type="button" @onclick="ApplySummaryPeriodAsync">Apply</button>
+                    <button type="button" class="secondary-button" @onclick="ApplySummaryPeriodAsync">Apply</button>
                 </div>
             </div>
 
-            <div class="summary-total">
-                <span>Total expenses</span>
-                <strong>@($"{Summary.ExpenseTotal:0.00}")</strong>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(DashboardState.SummaryErrorMessage))
-            {
-                <p class="validation-message">@DashboardState.SummaryErrorMessage</p>
-            }
-
-            @if (Summary.Categories.Any())
-            {
-                <div class="summary-categories">
-                    @foreach (var category in Summary.Categories)
-                    {
-                        <div class="summary-category-row" @key="category.CategoryId">
-                            <span>@category.CategoryName</span>
-                            <strong>@($"{category.Total:0.00}")</strong>
-                        </div>
-                    }
+            <div class="panel-body">
+                <div class="summary-total">
+                    <span>Total expenses</span>
+                    <strong>@($"{Summary.ExpenseTotal:0.00}")</strong>
                 </div>
-            }
-            else
-            {
-                <p class="empty-state">No expenses recorded for this month.</p>
-            }
+
+                @if (!string.IsNullOrWhiteSpace(DashboardState.SummaryErrorMessage))
+                {
+                    <p class="validation-message">@DashboardState.SummaryErrorMessage</p>
+                }
+
+                @if (Summary.Categories.Any())
+                {
+                    <div class="summary-categories">
+                        @foreach (var category in Summary.Categories)
+                        {
+                            <div class="summary-category-row" @key="category.CategoryId">
+                                <span>@category.CategoryName</span>
+                                <strong>@($"{category.Total:0.00}")</strong>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="empty-state">No expenses recorded for this month.</p>
+                }
+            </div>
         </section>
     }
 
     @if (Transactions.Any())
     {
-        <section class="transaction-list">
-            <h2>Recent transactions</h2>
-
-            @foreach (var transaction in Transactions)
-            {
-                <div class="transaction-row" @key="transaction.Id">
-                    @if (EditingId == transaction.Id)
-                    {
-                        <div class="edit-form">
-                            <EditForm Model="EditForm" OnValidSubmit="UpdateAsync" FormName="update-transaction">
-                                <DataAnnotationsValidator />
-                                <ValidationSummary />
-
-                                <div class="transaction-grid">
-                                    <label>
-                                        <span>Type</span>
-                                        <InputSelect @bind-Value="EditForm.Type">
-                                            <option value="@TransactionType.Expense">Expense</option>
-                                            <option value="@TransactionType.Income">Income</option>
-                                        </InputSelect>
-                                    </label>
-
-                                    <label>
-                                        <span>Amount</span>
-                                        <InputNumber @bind-Value="EditForm.Amount" />
-                                    </label>
-
-                                    <label>
-                                        <span>Date</span>
-                                        <InputDate @bind-Value="EditForm.Date" />
-                                    </label>
-
-                                    <label>
-                                        <span>Category</span>
-                                        <InputSelect @bind-Value="EditForm.CategoryId">
-                                            <option value="">Auto</option>
-                                            @foreach (var category in Categories.Where(category => category.TransactionType == EditForm.Type))
-                                            {
-                                                <option value="@category.Id">@category.Name</option>
-                                            }
-                                        </InputSelect>
-                                    </label>
-                                </div>
-
-                                <label class="description-field">
-                                    <span>Description</span>
-                                    <InputText @bind-Value="EditForm.Description" />
-                                </label>
-
-                                <div class="edit-actions">
-                                    <button type="submit">Save</button>
-                                    <button type="button" class="cancel-button" @onclick="CancelEdit">Cancel</button>
-                                </div>
-                            </EditForm>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="transaction-details">
-                            <span class="transaction-date">@transaction.Date.ToString("yyyy-MM-dd")</span>
-                            <span class="transaction-description">@transaction.Description</span>
-                            <span class="transaction-category">@transaction.CategoryName</span>
-                            <span class="transaction-amount @(transaction.Type == TransactionType.Expense ? "amount-expense" : "amount-income")">
-                                @($"{(transaction.Type == TransactionType.Expense ? "-" : "+")}{transaction.Amount:0.00}")
-                            </span>
-                        </div>
-                        <div class="transaction-actions">
-                            <button type="button" class="edit-button" @onclick="() => StartEdit(transaction)">Edit</button>
-                            <button type="button" class="delete-button" @onclick="() => DeleteAsync(transaction.Id)">Delete</button>
-                        </div>
-                    }
+        <section class="panel transaction-list">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h2>Recent transactions</h2>
+                    <p>Edit or remove locally stored transaction rows.</p>
                 </div>
-            }
+            </div>
+
+            <div class="panel-body list-stack">
+                @foreach (var transaction in Transactions)
+                {
+                    <div class="list-row transaction-row" @key="transaction.Id">
+                        @if (EditingId == transaction.Id)
+                        {
+                            <div class="edit-form">
+                                <EditForm Model="EditForm" OnValidSubmit="UpdateAsync" FormName="update-transaction">
+                                    <DataAnnotationsValidator />
+                                    <ValidationSummary />
+
+                                    <div class="transaction-grid">
+                                        <label>
+                                            <span>Type</span>
+                                            <InputSelect @bind-Value="EditForm.Type">
+                                                <option value="@TransactionType.Expense">Expense</option>
+                                                <option value="@TransactionType.Income">Income</option>
+                                            </InputSelect>
+                                        </label>
+
+                                        <label>
+                                            <span>Amount</span>
+                                            <InputNumber @bind-Value="EditForm.Amount" />
+                                        </label>
+
+                                        <label>
+                                            <span>Date</span>
+                                            <InputDate @bind-Value="EditForm.Date" />
+                                        </label>
+
+                                        <label>
+                                            <span>Category</span>
+                                            <InputSelect @bind-Value="EditForm.CategoryId">
+                                                <option value="">Auto</option>
+                                                @foreach (var category in Categories.Where(category => category.TransactionType == EditForm.Type))
+                                                {
+                                                    <option value="@category.Id">@category.Name</option>
+                                                }
+                                            </InputSelect>
+                                        </label>
+                                    </div>
+
+                                    <label class="description-field">
+                                        <span>Description</span>
+                                        <InputText @bind-Value="EditForm.Description" />
+                                    </label>
+
+                                    <div class="edit-actions">
+                                        <button type="submit" class="primary-button">Save</button>
+                                        <button type="button" class="secondary-button cancel-button" @onclick="CancelEdit">Cancel</button>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="transaction-details">
+                                <span class="transaction-date">@transaction.Date.ToString("yyyy-MM-dd")</span>
+                                <span class="transaction-description">@transaction.Description</span>
+                                <span class="transaction-category tag">@transaction.CategoryName</span>
+                                <span class="transaction-amount @(transaction.Type == TransactionType.Expense ? "amount-expense" : "amount-income")">
+                                    @($"{(transaction.Type == TransactionType.Expense ? "-" : "+")}{transaction.Amount:0.00}")
+                                </span>
+                            </div>
+                            <div class="transaction-actions">
+                                <button type="button" class="secondary-button edit-button" @onclick="() => StartEdit(transaction)">Edit</button>
+                                <button type="button" class="danger-button delete-button" @onclick="() => DeleteAsync(transaction.Id)">Delete</button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </section>
     }
 </main>

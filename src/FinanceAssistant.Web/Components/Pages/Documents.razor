@@ -12,67 +12,79 @@
 
 <PageTitle>Documents</PageTitle>
 
-<main class="documents-shell">
-    <section class="documents-entry">
-        <div>
-            <h1>Documents</h1>
-            <p class="page-kicker">Parse local PDF and plain text files without retaining originals.</p>
+<main class="supporting-page documents-shell">
+    <section class="panel documents-entry">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Documents</h2>
+                <p>Parse local PDF and plain text files without retaining originals.</p>
+            </div>
+            <span class="pill">Untrusted input</span>
         </div>
 
-        <InputFile OnChange="UploadAsync" accept="application/pdf,text/plain" />
+        <div class="panel-body">
+            <InputFile OnChange="UploadAsync" accept="application/pdf,text/plain" />
 
-        @if (!string.IsNullOrWhiteSpace(StatusMessage))
-        {
-            <p class="status-message">@StatusMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                <p class="status-message">@StatusMessage</p>
+            }
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <p class="validation-message">@ErrorMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <p class="validation-message">@ErrorMessage</p>
+            }
+        </div>
     </section>
 
-    <section class="documents-list">
-        <h2>Parsed documents</h2>
+    <section class="panel documents-list">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Parsed documents</h2>
+                <p>Extracted text is displayed inertly and never executes.</p>
+            </div>
+        </div>
 
-        @if (DocumentResults.Any())
-        {
-            @foreach (var document in DocumentResults)
+        <div class="panel-body list-stack">
+            @if (DocumentResults.Any())
             {
-                <article class="document-row" @key="document.Id">
-                    <div class="document-summary">
-                        <div>
-                            <strong>@document.OriginalDisplayName</strong>
-                            <span>@document.VerifiedMediaType</span>
-                        </div>
-                        <span class="document-status">@document.ParseStatus</span>
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(document.FailureReason))
-                    {
-                        <p class="validation-message">@document.FailureReason</p>
-                    }
-
-                    @if (ParsedDocuments.TryGetValue(document.Id, out var parsed))
-                    {
-                        <div class="document-preview">
+                @foreach (var document in DocumentResults)
+                {
+                    <article class="list-row document-row" @key="document.Id">
+                        <div class="document-summary">
                             <div>
-                                <span>@parsed.ParsedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
-                                @if (parsed.PdfPageCount is not null)
-                                {
-                                    <span>@parsed.PdfPageCount page(s)</span>
-                                }
+                                <strong>@document.OriginalDisplayName</strong>
+                                <span>@document.VerifiedMediaType</span>
                             </div>
-                            <pre>@Preview(parsed.UntrustedExtractedText)</pre>
+                            <span class="document-status badge">@document.ParseStatus</span>
                         </div>
-                    }
-                </article>
+
+                        @if (!string.IsNullOrWhiteSpace(document.FailureReason))
+                        {
+                            <p class="validation-message">@document.FailureReason</p>
+                        }
+
+                        @if (ParsedDocuments.TryGetValue(document.Id, out var parsed))
+                        {
+                            <div class="document-preview">
+                                <div>
+                                    <span>@parsed.ParsedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                    @if (parsed.PdfPageCount is not null)
+                                    {
+                                        <span>@parsed.PdfPageCount page(s)</span>
+                                    }
+                                </div>
+                                <pre>@Preview(parsed.UntrustedExtractedText)</pre>
+                            </div>
+                        }
+                    </article>
+                }
             }
-        }
-        else
-        {
-            <p class="empty-state">No documents parsed.</p>
-        }
+            else
+            {
+                <p class="empty-state">No documents parsed.</p>
+            }
+        </div>
     </section>
 </main>
 

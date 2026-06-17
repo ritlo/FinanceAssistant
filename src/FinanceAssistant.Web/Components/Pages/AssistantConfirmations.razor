@@ -10,14 +10,17 @@
 
 <PageTitle>Assistant Confirmations</PageTitle>
 
-<main class="assistant-shell">
-    <section class="assistant-status">
-        <div>
-            <h1>Assistant Confirmations</h1>
-            <p class="page-kicker">Review a typed assistant proposal token before any write is persisted.</p>
+<main class="supporting-page assistant-shell">
+    <section class="panel assistant-status">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Assistant confirmations</h2>
+                <p>Review a typed assistant proposal token before any write is persisted.</p>
+            </div>
+            <span class="pill">Confirm writes</span>
         </div>
 
-        <div class="assistant-confirmation-form">
+        <div class="assistant-confirmation-form panel-body">
             <label>
                 <span>Confirmation token</span>
                 <input @bind="TokenText" />
@@ -27,14 +30,14 @@
                 <input @bind="Fingerprint" />
             </label>
             <div class="transaction-actions">
-                <button type="button" @onclick="ConfirmAsync">Confirm</button>
-                <button type="button" class="cancel-button" @onclick="CancelAsync">Cancel</button>
+                <button type="button" class="primary-button" @onclick="ConfirmAsync">Confirm</button>
+                <button type="button" class="secondary-button cancel-button" @onclick="CancelAsync">Cancel</button>
             </div>
         </div>
 
         @if (Preview is not null)
         {
-            <article class="assistant-confirmation-preview">
+            <article class="list-row assistant-confirmation-preview">
                 <h2>@Preview.ProposalType</h2>
                 <dl class="assistant-config">
                     <div>
@@ -58,7 +61,9 @@
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
-            <p class="validation-message">@ErrorMessage</p>
+            <div class="panel-body compact-panel-body">
+                <p class="validation-message">@ErrorMessage</p>
+            </div>
         }
     </section>
 </main>

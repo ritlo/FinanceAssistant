@@ -15,72 +15,84 @@
 
 <PageTitle>Payments</PageTitle>
 
-<main class="payments-shell">
-    <section class="payments-entry">
-        <div>
-            <h1>Payments</h1>
-            <p class="page-kicker">Track local payment reminders by due date and paid state.</p>
+<main class="supporting-page payments-shell">
+    <section class="panel payments-entry">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Payments</h2>
+                <p>Track local payment reminders by due date and paid state.</p>
+            </div>
+            <span class="pill">Reminder workflow</span>
         </div>
 
-        <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
-            <div class="payment-grid">
-                <label>
-                    <span>Content</span>
-                    <input @bind="Content" />
-                </label>
-                <label>
-                    <span>Due date</span>
-                    <input type="date" @bind="DueDate" />
-                </label>
-            </div>
+        <div class="panel-body">
+            <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+                <div class="payment-grid">
+                    <label>
+                        <span>Content</span>
+                        <input @bind="Content" />
+                    </label>
+                    <label>
+                        <span>Due date</span>
+                        <input type="date" @bind="DueDate" />
+                    </label>
+                </div>
 
-            <button type="submit">Add reminder</button>
-        </form>
+                <button type="submit" class="primary-button">Add reminder</button>
+            </form>
 
-        @if (!string.IsNullOrWhiteSpace(StatusMessage))
-        {
-            <p class="status-message">@StatusMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                <p class="status-message">@StatusMessage</p>
+            }
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <p class="validation-message">@ErrorMessage</p>
-        }
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <p class="validation-message">@ErrorMessage</p>
+            }
+        </div>
     </section>
 
-    <section class="payments-list">
-        <h2>Payment reminders</h2>
+    <section class="panel payments-list">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Payment reminders</h2>
+                <p>Mark reminders paid or unpaid without changing the original due date.</p>
+            </div>
+        </div>
 
-        @if (Reminders.Any())
-        {
-            @foreach (var reminder in Reminders)
+        <div class="panel-body list-stack">
+            @if (Reminders.Any())
             {
-                <div class="payment-row" @key="reminder.Id">
-                    <div class="payment-details">
-                        <span class="payment-due">@reminder.DueDate.ToString("yyyy-MM-dd")</span>
-                        <span class="payment-content">@reminder.Content</span>
-                        <span class="payment-state @(reminder.IsPaid ? "payment-paid" : "payment-unpaid")">
-                            @(reminder.IsPaid ? "Paid" : "Unpaid")
-                        </span>
+                @foreach (var reminder in Reminders)
+                {
+                    <div class="list-row payment-row" @key="reminder.Id">
+                        <div class="payment-details">
+                            <span class="payment-due">@reminder.DueDate.ToString("yyyy-MM-dd")</span>
+                            <span class="payment-content">@reminder.Content</span>
+                            <span class="payment-state badge @(reminder.IsPaid ? "payment-paid" : "payment-unpaid")">
+                                @(reminder.IsPaid ? "Paid" : "Unpaid")
+                            </span>
+                        </div>
+                        <div class="payment-actions">
+                            @if (reminder.IsPaid)
+                            {
+                                <button type="button" class="secondary-button edit-button" @onclick="() => MarkUnpaidAsync(reminder.Id)">Mark unpaid</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="secondary-button edit-button" @onclick="() => MarkPaidAsync(reminder.Id)">Mark paid</button>
+                            }
+                            <button type="button" class="danger-button delete-button" @onclick="() => DeleteAsync(reminder.Id)">Delete</button>
+                        </div>
                     </div>
-                    <div class="payment-actions">
-                        @if (reminder.IsPaid)
-                        {
-                            <button type="button" class="edit-button" @onclick="() => MarkUnpaidAsync(reminder.Id)">Mark unpaid</button>
-                        }
-                        else
-                        {
-                            <button type="button" class="edit-button" @onclick="() => MarkPaidAsync(reminder.Id)">Mark paid</button>
-                        }
-                        <button type="button" class="delete-button" @onclick="() => DeleteAsync(reminder.Id)">Delete</button>
-                    </div>
-                </div>
+                }
             }
-        }
-        else
-        {
-            <p class="empty-state">No payment reminders recorded.</p>
-        }
+            else
+            {
+                <p class="empty-state">No payment reminders recorded.</p>
+            }
+        </div>
     </section>
 </main>
 
