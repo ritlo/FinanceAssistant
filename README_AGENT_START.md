@@ -35,8 +35,13 @@ ambiguous requirements, risk reviews, and final acceptance. Use local model
 edits, focused low-risk tests, formatting fixes, repository inspection
 summaries, validation command runs, and low-risk documentation updates.
 
-The agent cannot execute Pi slash commands itself. Prompt the user to switch
-the active Pi model before implementation or validation work with
+When `pi-dynamic-workflows` is available, delegate simple work to a workflow
+subagent on Qwen, using either the configured small tier or exact model
+`Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf`. Keep `gpt-5.5` for the supervising plan,
+review, or synthesis step.
+
+If workflow subagent routing is unavailable, prompt the user to switch the
+active Pi model before implementation or validation work with
 `/model Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf`. Prompt them to switch back with
 `/model gpt-5.5` before planning, architecture, risk review, or acceptance.
 
