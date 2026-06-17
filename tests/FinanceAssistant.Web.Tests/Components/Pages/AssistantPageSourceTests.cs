@@ -39,6 +39,17 @@ public sealed class AssistantPageSourceTests
     }
 
     [Fact]
+    public void AssistantPagePassesConversationHistoryAndForcesTextboxClearAfterSubmit()
+    {
+        var source = ReadProjectFile("src/FinanceAssistant.Web/Components/Pages/Assistant.razor");
+
+        Assert.Contains("ConversationHistory:", source, StringComparison.Ordinal);
+        Assert.Contains("BuildConversationHistory()", source, StringComparison.Ordinal);
+        Assert.Contains("@key=\"MessageClearVersion\"", source, StringComparison.Ordinal);
+        Assert.Contains("MessageClearVersion++", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void WebTestsDoNotUseLiveBrowserOrComponentPackages()
     {
         var project = ReadProjectFile("tests/FinanceAssistant.Web.Tests/FinanceAssistant.Web.Tests.csproj");

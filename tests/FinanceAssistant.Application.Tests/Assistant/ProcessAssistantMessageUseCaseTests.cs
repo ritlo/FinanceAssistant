@@ -57,6 +57,21 @@ public sealed class ProcessAssistantMessageUseCaseTests
     }
 
     [Fact]
+    public async Task SendsRecentConversationHistoryToModelRuntimeContext()
+    {
+        var fixture = new Fixture("Hello again.");
+
+        await fixture.Process.ExecuteAsync(new ProcessAssistantMessageRequest(
+            "record",
+            ConversationHistory: "FinanceAssistant: I found three Newegg.ca orders.\nYou: record them"));
+
+        Assert.NotNull(fixture.Model.LastRequest);
+        Assert.Contains("Recent conversation:", fixture.Model.LastRequest.RuntimeContext, StringComparison.Ordinal);
+        Assert.Contains("FinanceAssistant: I found three Newegg.ca orders.", fixture.Model.LastRequest.RuntimeContext, StringComparison.Ordinal);
+        Assert.Contains("You: record them", fixture.Model.LastRequest.RuntimeContext, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AdviceUsesStoredMonthlyData()
     {
         var fixture = new Fixture(

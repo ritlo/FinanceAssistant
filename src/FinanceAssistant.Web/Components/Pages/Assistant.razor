@@ -144,7 +144,7 @@
                     </div>
                     <div class="composer-row">
                         <label class="visually-hidden" for="assistant-message">Assistant message</label>
-                        <textarea id="assistant-message" @bind="Message" @bind:event="oninput" rows="4" data-enter-submits="true" data-submit-key="@AssistantComposerKeyboardPolicy.SubmitKey" data-send-button-selector="@AssistantComposerKeyboardPolicy.SendButtonSelector" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
+                        <textarea id="assistant-message" @key="MessageClearVersion" @bind="Message" @bind:event="oninput" rows="4" data-enter-submits="true" data-submit-key="@AssistantComposerKeyboardPolicy.SubmitKey" data-send-button-selector="@AssistantComposerKeyboardPolicy.SendButtonSelector" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
                         <button type="submit" class="primary-button">
                             <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path d="M22 2 11 13" />
@@ -254,6 +254,8 @@
 
     private string Message { get; set; } = string.Empty;
 
+    private int MessageClearVersion { get; set; }
+
     private ProcessAssistantMessageResult? Result { get; set; }
 
     private string? ErrorMessage { get; set; }
@@ -304,10 +306,15 @@
             Conversation.Add(new AssistantConversationEntry("You", userMessage, IsUser: true, Result: null));
 
             Result = await ProcessAssistantMessage.ExecuteAsync(
-                new ProcessAssistantMessageRequest(userMessage, SelectedYear, DashboardState.SelectedMonth));
+                new ProcessAssistantMessageRequest(
+                    userMessage,
+                    SelectedYear,
+                    DashboardState.SelectedMonth,
+                    ConversationHistory: BuildConversationHistory()));
             Conversation.Add(new AssistantConversationEntry("FinanceAssistant", Result.Message, IsUser: false, Result));
             ErrorMessage = null;
             Message = string.Empty;
+            MessageClearVersion++;
         }
         catch (DomainValidationException exception)
         {
@@ -322,6 +329,16 @@
         Result = null;
         ErrorMessage = null;
         Message = string.Empty;
+        MessageClearVersion++;
+    }
+
+    private string BuildConversationHistory()
+    {
+        return string.Join(
+            "\n",
+            Conversation
+                .TakeLast(8)
+                .Select(entry => $"{entry.Label}: {entry.Text.ReplaceLineEndings(" ")}"));
     }
 
     private void UsePrompt(string prompt)

@@ -378,7 +378,14 @@ public sealed class ProcessAssistantMessageUseCase
     {
         var period = GetRequestPeriod(request);
         var currentDate = DateOnly.FromDateTime(clock.UtcNow.LocalDateTime);
-        return $"Current local date: {currentDate:O}. Active summary period: {period.Year:D4}-{period.Month:D2}. Interpret 'this month' as the active summary period.";
+        var context = $"Current local date: {currentDate:O}. Active summary period: {period.Year:D4}-{period.Month:D2}. Interpret 'this month' as the active summary period.";
+
+        if (string.IsNullOrWhiteSpace(request.ConversationHistory))
+        {
+            return context;
+        }
+
+        return $"{context}\n\nRecent conversation:\n{request.ConversationHistory.Trim()}";
     }
 
     private (int Year, int Month) GetRequestPeriod(ProcessAssistantMessageRequest request)
