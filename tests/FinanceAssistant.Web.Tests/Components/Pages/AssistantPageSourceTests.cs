@@ -15,13 +15,15 @@ public sealed class AssistantPageSourceTests
     }
 
     [Fact]
-    public void AssistantPageRendersPendingProposalTokenAndFingerprintDisplayFields()
+    public void AssistantPageRendersPendingProposalActionsInline()
     {
         var source = ReadProjectFile("src/FinanceAssistant.Web/Components/Pages/Assistant.razor");
 
         Assert.Contains("AssistantProposalPreviewModel.FromResult", source, StringComparison.Ordinal);
-        Assert.Contains("<code>@proposal.TokenDisplay</code>", source, StringComparison.Ordinal);
-        Assert.Contains("<code>@proposal.FingerprintDisplay</code>", source, StringComparison.Ordinal);
+        Assert.Contains("@onclick=\"() => ApproveProposalAsync(proposal)\"", source, StringComparison.Ordinal);
+        Assert.Contains("@onclick=\"() => DenyProposalAsync(proposal)\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("<code>@proposal.TokenDisplay</code>", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("<code>@proposal.FingerprintDisplay</code>", source, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -3,6 +3,8 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @using FinanceAssistant.Application.Assistant
+@using FinanceAssistant.Application.Assistant.Confirmations.CancelAssistantProposal
+@using FinanceAssistant.Application.Assistant.Confirmations.ConfirmAssistantProposal
 @using FinanceAssistant.Application.Assistant.ProcessMessage
 @using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary
 @using FinanceAssistant.Application.Finance.Transactions
@@ -12,6 +14,8 @@
 @using FinanceAssistant.Web.Finance.Transactions
 @inject IAssistantModelClient AssistantModelClient
 @inject ProcessAssistantMessageUseCase ProcessAssistantMessage
+@inject ConfirmAssistantProposalUseCase ConfirmAssistantProposal
+@inject CancelAssistantProposalUseCase CancelAssistantProposal
 @inject TransactionDashboardState DashboardState
 
 <script type="module" src="@Assets["Components/Pages/Assistant.razor.js"]"></script>
@@ -183,9 +187,12 @@
                         <div class="proposal-card">
                             <strong>Pending confirmation</strong>
                             <span>@proposal.ToolName</span>
-                            <code>@proposal.TokenDisplay</code>
-                            <code>@proposal.FingerprintDisplay</code>
-                            <a class="primary-button" href="/assistant/confirmations">Review proposals</a>
+                            <p>Approve this proposal to save it, or deny it to discard the pending write.</p>
+                            <div class="transaction-actions">
+                                <button type="button" class="primary-button" disabled="@IsProposalActionBusy" @onclick="() => ApproveProposalAsync(proposal)">Approve</button>
+                                <button type="button" class="secondary-button cancel-button" disabled="@IsProposalActionBusy" @onclick="() => DenyProposalAsync(proposal)">Deny</button>
+                            </div>
+                            <a class="secondary-button" href="/assistant/confirmations">Open all proposals</a>
                         </div>
                     </div>
                 }
@@ -251,6 +258,8 @@
 
     private string? ErrorMessage { get; set; }
 
+    private bool IsProposalActionBusy { get; set; }
+
     private List<AssistantConversationEntry> Conversation { get; } = [];
 
     private IReadOnlyList<TransactionResult> Transactions => DashboardState.Transactions;
@@ -312,6 +321,45 @@
     private void UsePrompt(string prompt)
     {
         Message = prompt;
+    }
+
+    private async Task ApproveProposalAsync(AssistantProposalPreviewModel proposal)
+    {
+        await RunProposalActionAsync(
+            () => ConfirmAssistantProposal.ExecuteAsync(new ConfirmAssistantProposalRequest(proposal.Token, proposal.OperationFingerprint)),
+            "Proposal approved and saved.");
+    }
+
+    private async Task DenyProposalAsync(AssistantProposalPreviewModel proposal)
+    {
+        await RunProposalActionAsync(
+            () => CancelAssistantProposal.ExecuteAsync(new CancelAssistantProposalRequest(proposal.Token)),
+            "Proposal denied. Nothing was saved.");
+    }
+
+    private async Task RunProposalActionAsync(Func<Task> action, string successMessage)
+    {
+        if (IsProposalActionBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            IsProposalActionBusy = true;
+            await action();
+            Result = null;
+            ErrorMessage = null;
+            Conversation.Add(new AssistantConversationEntry("FinanceAssistant", successMessage, IsUser: false, Result: null));
+        }
+        catch (DomainValidationException exception)
+        {
+            ErrorMessage = exception.Message;
+        }
+        finally
+        {
+            IsProposalActionBusy = false;
+        }
     }
 
     private string GetCategoryWidth(decimal total)
