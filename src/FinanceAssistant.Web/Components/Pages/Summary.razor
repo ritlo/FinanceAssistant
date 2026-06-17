@@ -24,7 +24,7 @@
         }
     </section>
 
-    <MonthlySummaryPanel Summary="@Summary"
+    <MonthlySummaryPanel Summary="@MonthlySummary"
                          Transactions="@Transactions"
                          SelectedMonthName="@SelectedMonthName"
                          ErrorMessage="@DashboardState.SummaryErrorMessage" />
@@ -76,7 +76,7 @@
 @code {
     private IReadOnlyList<TransactionResult> Transactions => DashboardState.Transactions;
 
-    private GetMonthlySummaryResult? Summary => DashboardState.Summary;
+    private GetMonthlySummaryResult? MonthlySummary => DashboardState.Summary;
 
     private int SelectedYear => DashboardState.SelectedYear;
 
