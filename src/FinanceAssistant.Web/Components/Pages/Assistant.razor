@@ -1,3 +1,4 @@
+@page "/"
 @page "/assistant"
 @rendermode InteractiveServer
 @implements IDisposable
@@ -196,7 +197,7 @@
                 <h2>Recent transactions</h2>
                 <p>Shown below the assistant so conversation and context stay together.</p>
             </div>
-            <a class="secondary-button" href="/">View all</a>
+            <a class="secondary-button" href="/transactions/manual">View all</a>
         </div>
 
         @if (Transactions.Any())

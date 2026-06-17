@@ -1,4 +1,4 @@
-@page "/"
+@page "/transactions/manual"
 @rendermode InteractiveServer
 @implements IDisposable
 @using FinanceAssistant.Application.Finance.Categories
@@ -16,13 +16,13 @@
 @inject DeleteTransactionUseCase DeleteTransaction
 @inject TransactionDashboardState DashboardState
 
-<PageTitle>Transactions</PageTitle>
+<PageTitle>Manual transaction</PageTitle>
 
 <main class="transaction-shell">
     <section class="transaction-entry">
         <div>
-            <h1>Transactions</h1>
-            <p class="page-kicker">Log income and expenses against deterministic local categories.</p>
+            <h1>Manual transaction</h1>
+            <p class="page-kicker">Log income and expenses against deterministic local categories without using the assistant.</p>
         </div>
 
         <EditForm Model="Form" OnValidSubmit="SubmitAsync" FormName="log-transaction">
