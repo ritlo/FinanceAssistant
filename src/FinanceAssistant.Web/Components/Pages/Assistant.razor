@@ -1,86 +1,246 @@
 @page "/assistant"
 @rendermode InteractiveServer
+@implements IDisposable
 @using FinanceAssistant.Application.Assistant
 @using FinanceAssistant.Application.Assistant.ProcessMessage
+@using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary
+@using FinanceAssistant.Application.Finance.Transactions
 @using FinanceAssistant.Domain.Common
+@using FinanceAssistant.Domain.Finance.Transactions
+@using FinanceAssistant.Web.Assistant
+@using FinanceAssistant.Web.Finance.Transactions
 @inject IAssistantModelClient AssistantModelClient
 @inject ProcessAssistantMessageUseCase ProcessAssistantMessage
+@inject TransactionDashboardState DashboardState
 
 <PageTitle>Assistant</PageTitle>
 
-<main class="assistant-shell">
-    <section class="assistant-status">
-        <div>
-            <h1>Assistant</h1>
-            <p class="page-kicker">Local-first model configuration for read tools, grounded advice, and confirmed proposals.</p>
+<main class="assistant-workspace">
+    <section id="monthly-summary" class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Monthly summary</h2>
+                <p>@SelectedMonthName @SelectedYear. Read-only context available to the assistant.</p>
+            </div>
+            <div class="top-actions">
+                <span class="pill">Read-only</span>
+            </div>
         </div>
 
-        <dl class="assistant-config">
-            <div>
-                <dt>Endpoint</dt>
-                <dd>@Disclosure.Endpoint</dd>
-            </div>
-            <div>
-                <dt>Model</dt>
-                <dd>@Disclosure.Model</dd>
-            </div>
-            <div>
-                <dt>Location</dt>
-                <dd>@(Disclosure.IsRemoteEndpoint ? "Remote" : "Local")</dd>
-            </div>
-        </dl>
-
-        @if (Disclosure.RequiresRemoteDisclosure)
+        @if (Summary is not null)
         {
-            <p class="validation-message">@Disclosure.WarningMessage</p>
+            <div class="summary-strip">
+                <div class="summary-feature">
+                    <span>Total expenses</span>
+                    <strong>@FormatAmount(Summary.ExpenseTotal)</strong>
+
+                    @if (Summary.Categories.Any())
+                    {
+                        <div class="mini-bars" aria-label="Expense categories">
+                            @foreach (var category in Summary.Categories.Take(4))
+                            {
+                                <div class="bar-row" @key="category.CategoryId">
+                                    <span>@category.CategoryName</span>
+                                    <div class="track"><div class="fill" style="width: @GetCategoryWidth(category.Total)"></div></div>
+                                    <span>@FormatAmount(category.Total)</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-state">No expenses recorded for this month.</p>
+                    }
+                </div>
+
+                <div class="summary-stat">
+                    <span>Expense categories</span>
+                    <strong>@Summary.Categories.Count</strong>
+                </div>
+                <div class="summary-stat">
+                    <span>Recent transactions</span>
+                    <strong>@Transactions.Count</strong>
+                </div>
+                <div class="summary-stat">
+                    <span>Assistant writes</span>
+                    <strong>Confirm first</strong>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="summary-strip">
+                <div class="summary-feature">
+                    <span>Monthly summary</span>
+                    <strong>Unavailable</strong>
+                    <p class="validation-message">@(DashboardState.SummaryErrorMessage ?? "No monthly summary loaded yet.")</p>
+                </div>
+            </div>
         }
     </section>
 
-    <section class="assistant-status">
-        <form class="assistant-message-form" @onsubmit="SendAsync" @onsubmit:preventDefault="true">
-            <label>
-                <span>Message</span>
-                <textarea @bind="Message" rows="4"></textarea>
-            </label>
-            <button type="submit">Send</button>
-        </form>
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Assistant</h2>
+                <p>Center-stage LLM workflow: immediate reads, grounded advice, confirmed writes.</p>
+            </div>
+            <div class="top-actions">
+                <span class="pill">@Workspace.StatusPill</span>
+                <button type="button" class="secondary-button" @onclick="StartNewChat">
+                    <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M3 12h18" />
+                        <path d="M12 3v18" />
+                    </svg>
+                    New chat
+                </button>
+            </div>
+        </div>
 
-        @if (Result is not null)
+        <div class="assistant-stage">
+            <div class="conversation">
+                <div class="messages" aria-live="polite">
+                    @if (Conversation.Count == 0)
+                    {
+                        <div class="message">
+                            <span class="message-label">FinanceAssistant</span>
+                            <div class="bubble">Ask about spending, notes, reminders, or parsed documents. Reads can run immediately; writes return a proposal for confirmation.</div>
+                        </div>
+                    }
+
+                    @foreach (var entry in Conversation)
+                    {
+                        <div class="message @(entry.IsUser ? "user" : null)">
+                            <span class="message-label">@entry.Label</span>
+                            <div class="bubble">@entry.Text</div>
+                        </div>
+
+                        @if (entry.Result is { PayloadJson: { Length: > 0 } payloadJson })
+                        {
+                            <div class="tool-card">
+                                <header>
+                                    <span>@(entry.Result.ToolName ?? "Assistant payload")</span>
+                                    <span>@GetToolKindLabel(entry.Result)</span>
+                                </header>
+                                <pre>@payloadJson</pre>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <form class="composer" @onsubmit="SendAsync" @onsubmit:preventDefault="true">
+                    <div class="quick-actions" aria-label="Quick prompts">
+                        @foreach (var prompt in AssistantWorkspaceDisplayModel.QuickPrompts)
+                        {
+                            <button type="button" @onclick="() => UsePrompt(prompt)">@prompt</button>
+                        }
+                    </div>
+                    <div class="composer-row">
+                        <label class="visually-hidden" for="assistant-message">Assistant message</label>
+                        <textarea id="assistant-message" @bind="Message" rows="4" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
+                        <button type="submit" class="primary-button">
+                            <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M22 2 11 13" />
+                                <path d="M22 2 15 22l-4-9-9-4Z" />
+                            </svg>
+                            Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <aside class="assistant-side" aria-label="Assistant configuration">
+                <div class="side-section">
+                    <h3>Model status</h3>
+                    <div class="model-grid">
+                        <div class="model-row"><span>Endpoint</span><strong>@Workspace.Endpoint</strong></div>
+                        <div class="model-row"><span>Model</span><strong>@Workspace.Model</strong></div>
+                        <div class="model-row"><span>Location</span><strong>@Workspace.LocationLabel</strong></div>
+                        <div class="model-row"><span>Remote</span><strong>@Workspace.RemoteLabel</strong></div>
+                    </div>
+                    @if (Workspace.RequiresRemoteDisclosure)
+                    {
+                        <p class="validation-message">@Workspace.WarningMessage</p>
+                    }
+                </div>
+
+                <div class="side-section">
+                    <h3>Available tools</h3>
+                    <p>@string.Join(", ", AssistantWorkspaceDisplayModel.ImmediateReadTools).</p>
+                </div>
+
+                <div class="side-section">
+                    <h3>Write safety</h3>
+                    <p>@string.Join(", ", AssistantWorkspaceDisplayModel.ConfirmedWriteTools) create typed previews only. Nothing writes until explicit confirmation.</p>
+                </div>
+
+                @if (Result?.RequiresConfirmation == true)
+                {
+                    <div class="side-section">
+                        <div class="proposal-card">
+                            <strong>Pending confirmation</strong>
+                            <span>@Result.ToolName</span>
+                            <code>token @Result.ConfirmationToken</code>
+                            <code>fingerprint @Result.OperationFingerprint</code>
+                            <a class="primary-button" href="/assistant/confirmations">Review proposals</a>
+                        </div>
+                    </div>
+                }
+            </aside>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Recent transactions</h2>
+                <p>Shown below the assistant so conversation and context stay together.</p>
+            </div>
+            <a class="secondary-button" href="/">View all</a>
+        </div>
+
+        @if (Transactions.Any())
         {
-            <article class="assistant-confirmation-preview">
-                <h2>@(Result.ToolName ?? "Assistant")</h2>
-                <p class="@(Result.Succeeded ? "status-message" : "validation-message")">@Result.Message</p>
-
-                @if (Result.RequiresConfirmation)
-                {
-                    <dl class="assistant-config">
-                        <div>
-                            <dt>Token</dt>
-                            <dd>@Result.ConfirmationToken</dd>
-                        </div>
-                        <div>
-                            <dt>Fingerprint</dt>
-                            <dd>@Result.OperationFingerprint</dd>
-                        </div>
-                    </dl>
-                }
-
-                @if (!string.IsNullOrWhiteSpace(Result.PayloadJson))
-                {
-                    <pre>@Result.PayloadJson</pre>
-                }
-            </article>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in Transactions.Take(6))
+                    {
+                        <tr @key="transaction.Id">
+                            <td>@transaction.Date.ToString("yyyy-MM-dd")</td>
+                            <td><div class="desc">@transaction.Description</div></td>
+                            <td><span class="tag">@transaction.CategoryName</span></td>
+                            <td>
+                                <span class="amount @(transaction.Type == TransactionType.Expense ? "negative" : "positive")">
+                                    @FormatSignedAmount(transaction)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         }
-
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        else
         {
-            <p class="validation-message">@ErrorMessage</p>
+            <p class="empty-state panel-empty">No transactions recorded yet.</p>
         }
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <p class="validation-message">@ErrorMessage</p>
+    }
 </main>
 
 @code {
-    private AssistantConfigurationDisclosure Disclosure { get; set; } = default!;
+    private AssistantWorkspaceDisplayModel Workspace { get; set; } = default!;
 
     private string Message { get; set; } = string.Empty;
 
@@ -88,17 +248,47 @@
 
     private string? ErrorMessage { get; set; }
 
+    private List<AssistantConversationEntry> Conversation { get; } = [];
+
+    private IReadOnlyList<TransactionResult> Transactions => DashboardState.Transactions;
+
+    private GetMonthlySummaryResult? Summary => DashboardState.Summary;
+
+    private int SelectedYear => DashboardState.SelectedYear;
+
+    private string SelectedMonthName => string.IsNullOrWhiteSpace(DashboardState.SelectedMonthName)
+        ? new DateOnly(DashboardState.SelectedYear, DashboardState.SelectedMonth, 1).ToString("MMMM")
+        : DashboardState.SelectedMonthName;
+
     protected override void OnInitialized()
     {
-        Disclosure = AssistantModelClient.GetConfigurationDisclosure();
+        Workspace = AssistantWorkspaceDisplayModel.FromDisclosure(AssistantModelClient.GetConfigurationDisclosure());
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.StateChanged += OnDashboardStateChangedAsync;
+        await DashboardState.InitializeAsync();
     }
 
     private async Task SendAsync()
     {
         try
         {
-            Result = await ProcessAssistantMessage.ExecuteAsync(new ProcessAssistantMessageRequest(Message));
+            var userMessage = Message.Trim();
+            if (string.IsNullOrWhiteSpace(userMessage))
+            {
+                Result = null;
+                ErrorMessage = "Message is required.";
+                return;
+            }
+
+            Conversation.Add(new AssistantConversationEntry("You", userMessage, IsUser: true, Result: null));
+
+            Result = await ProcessAssistantMessage.ExecuteAsync(new ProcessAssistantMessageRequest(userMessage));
+            Conversation.Add(new AssistantConversationEntry("FinanceAssistant", Result.Message, IsUser: false, Result));
             ErrorMessage = null;
+            Message = string.Empty;
         }
         catch (DomainValidationException exception)
         {
@@ -106,4 +296,64 @@
             ErrorMessage = exception.Message;
         }
     }
+
+    private void StartNewChat()
+    {
+        Conversation.Clear();
+        Result = null;
+        ErrorMessage = null;
+        Message = string.Empty;
+    }
+
+    private void UsePrompt(string prompt)
+    {
+        Message = prompt;
+    }
+
+    private string GetCategoryWidth(decimal total)
+    {
+        var maxTotal = Summary?.Categories.Count > 0
+            ? Summary.Categories.Max(category => category.Total)
+            : 0m;
+
+        if (maxTotal <= 0m)
+        {
+            return "0%";
+        }
+
+        var percent = Math.Clamp((double)(total / maxTotal * 100m), 6d, 100d);
+        return $"{percent:0.#}%";
+    }
+
+    private static string FormatAmount(decimal amount)
+    {
+        return $"{amount:0.00}";
+    }
+
+    private static string FormatSignedAmount(TransactionResult transaction)
+    {
+        var sign = transaction.Type == TransactionType.Expense ? "-" : "+";
+        return $"{sign}{transaction.Amount:0.00}";
+    }
+
+    private static string GetToolKindLabel(ProcessAssistantMessageResult result)
+    {
+        return result.RequiresConfirmation ? "Needs confirmation" : "Read-only";
+    }
+
+    private Task OnDashboardStateChangedAsync()
+    {
+        return InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DashboardState.StateChanged -= OnDashboardStateChangedAsync;
+    }
+
+    private sealed record AssistantConversationEntry(
+        string Label,
+        string Text,
+        bool IsUser,
+        ProcessAssistantMessageResult? Result);
 }
