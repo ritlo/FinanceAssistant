@@ -4,6 +4,9 @@ using FinanceAssistant.Application.Assistant.Confirmations.CancelAssistantPropos
 using FinanceAssistant.Application.Assistant.Confirmations.ConfirmAssistantProposal;
 using FinanceAssistant.Application.Assistant.Confirmations.CreateAssistantProposal;
 using FinanceAssistant.Application.Assistant.ProcessMessage;
+using FinanceAssistant.Application.Assistant.Settings;
+using FinanceAssistant.Application.Assistant.Settings.GetAssistantSettings;
+using FinanceAssistant.Application.Assistant.Settings.UpdateAssistantSettings;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.CreateDocumentRecord;
@@ -53,15 +56,18 @@ var dataOptions = new FinanceAssistantDataOptions
     Currency = builder.Configuration["FinanceAssistant:Currency"] ?? string.Empty,
 };
 builder.Services.AddSingleton(dataOptions);
+var assistantEndpoint = builder.Configuration["FinanceAssistant:Assistant:Endpoint"]
+    ?? AssistantModelOptions.DefaultEndpoint;
+var assistantAllowRemote = bool.TryParse(builder.Configuration["FinanceAssistant:Assistant:AllowRemote"], out var allowRemote)
+    && allowRemote;
+builder.Services.AddSingleton(AssistantSettings.FromConfiguredEndpoint(assistantEndpoint, assistantAllowRemote));
 builder.Services.AddSingleton(new AssistantModelOptions
 {
-    Endpoint = builder.Configuration["FinanceAssistant:Assistant:Endpoint"]
-        ?? AssistantModelOptions.DefaultEndpoint,
+    Endpoint = assistantEndpoint,
     Model = builder.Configuration["FinanceAssistant:Assistant:Model"]
         ?? AssistantModelOptions.DefaultModel,
     ApiKey = builder.Configuration["FinanceAssistant:Assistant:ApiKey"],
-    AllowRemote = bool.TryParse(builder.Configuration["FinanceAssistant:Assistant:AllowRemote"], out var allowRemote)
-        && allowRemote,
+    AllowRemote = assistantAllowRemote,
 });
 builder.Services.AddSingleton<LiteDbSchemaInitializer>();
 builder.Services.AddScoped<ICurrentProfileProvider, LiteDbCurrentProfileProvider>();
@@ -75,6 +81,7 @@ builder.Services.AddScoped<IDocumentParsedContentRepository, LiteDbParsedDocumen
 builder.Services.AddScoped<IDocumentTemporaryStorage, FileSystemDocumentTemporaryStorage>();
 builder.Services.AddScoped<IDocumentParser, LocalDocumentParser>();
 builder.Services.AddScoped<IAssistantConfirmationRepository, LiteDbAssistantConfirmationRepository>();
+builder.Services.AddScoped<IAssistantSettingsRepository, LiteDbAssistantSettingsRepository>();
 builder.Services.AddSingleton<IAssistantPromptCatalog, FileAssistantPromptCatalog>();
 builder.Services.AddSingleton<AssistantModelOutputParser>();
 builder.Services.AddSingleton<InProcessTransactionChangeNotifier>();
@@ -104,6 +111,8 @@ builder.Services.AddScoped<UpdateDocumentStatusUseCase>();
 builder.Services.AddScoped<CreateAssistantProposalUseCase>();
 builder.Services.AddScoped<ConfirmAssistantProposalUseCase>();
 builder.Services.AddScoped<CancelAssistantProposalUseCase>();
+builder.Services.AddScoped<GetAssistantSettingsUseCase>();
+builder.Services.AddScoped<UpdateAssistantSettingsUseCase>();
 builder.Services.AddScoped<ProcessAssistantMessageUseCase>();
 
 builder.Services.AddRazorComponents()

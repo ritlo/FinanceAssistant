@@ -2,6 +2,7 @@ using FinanceAssistant.Application.Assistant;
 using FinanceAssistant.Application.Assistant.Confirmations;
 using FinanceAssistant.Application.Assistant.Confirmations.CreateAssistantProposal;
 using FinanceAssistant.Application.Assistant.ProcessMessage;
+using FinanceAssistant.Application.Assistant.Settings;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents;
 using FinanceAssistant.Application.Documents.GetParsedDocument;
@@ -111,6 +112,43 @@ public sealed class ProcessAssistantMessageUseCaseTests
     }
 
     [Fact]
+    public async Task DisabledWriteProposalsRejectsLocalTransactionProposalWithoutPersistingConfirmation()
+    {
+        var fixture = new Fixture("{}", writeProposalsEnabled: false);
+
+        var result = await fixture.Process.ExecuteAsync(
+            new ProcessAssistantMessageRequest("I spent $5 at Burger King this morning"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Assistant write proposals are disabled in Settings.", result.Message);
+        Assert.Empty(fixture.Confirmations.Records);
+        Assert.Empty(fixture.Transactions.Transactions);
+        Assert.Null(fixture.Model.LastRequest);
+    }
+
+    [Fact]
+    public async Task DisabledWriteProposalsRejectsModelWriteProposalWithoutPersistingConfirmation()
+    {
+        var fixture = new Fixture(
+            """
+            {
+              "name": "ProposeNote",
+              "parameters": {
+                "content": "Review subscriptions"
+              }
+            }
+            """,
+            writeProposalsEnabled: false);
+
+        var result = await fixture.Process.ExecuteAsync(new ProcessAssistantMessageRequest("remember this"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Assistant write proposals are disabled in Settings.", result.Message);
+        Assert.Empty(fixture.Confirmations.Records);
+        Assert.Empty(fixture.Notes.Notes);
+    }
+
+    [Fact]
     public async Task PlainModelTextReturnsChatResponse()
     {
         var fixture = new Fixture("Hello. I can help with spending, notes, reminders, and documents.");
@@ -210,13 +248,20 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
     private sealed class Fixture
     {
-        public Fixture(string modelOutput, DateTimeOffset? utcNow = null)
+        public Fixture(
+            string modelOutput,
+            DateTimeOffset? utcNow = null,
+            bool writeProposalsEnabled = true)
         {
             Clock = new FixedClock(utcNow ?? new DateTimeOffset(2026, 6, 16, 12, 0, 0, TimeSpan.Zero));
             CurrentProfile = new FixedCurrentProfileProvider(ProfileId);
             Category = Category.Create(ProfileId, "Groceries", TransactionType.Expense);
             Categories.Add(Category);
             Model = new FakeAssistantModelClient(modelOutput);
+            Settings = new FakeAssistantSettingsRepository(AssistantSettings.Default with
+            {
+                WriteProposalsEnabled = writeProposalsEnabled,
+            });
 
             var getTransactions = new GetTransactionsUseCase(CurrentProfile, Transactions, Categories);
             var getMonthlySummary = new GetMonthlySummaryUseCase(CurrentProfile, Transactions, Categories);
@@ -230,6 +275,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
                 Model,
                 new AssistantModelOutputParser(),
                 Clock,
+                Settings,
                 getTransactions,
                 getMonthlySummary,
                 listNotes,
@@ -249,6 +295,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
         public FakeAssistantConfirmationRepository Confirmations { get; } = new();
         public FixedClock Clock { get; }
         public FakeAssistantModelClient Model { get; }
+        public FakeAssistantSettingsRepository Settings { get; }
         public ProcessAssistantMessageUseCase Process { get; }
     }
 
@@ -267,6 +314,27 @@ public sealed class ProcessAssistantMessageUseCaseTests
                 StringComparer.Ordinal);
 
             return Task.FromResult(schemas);
+        }
+    }
+
+    private sealed class FakeAssistantSettingsRepository : IAssistantSettingsRepository
+    {
+        private AssistantSettings settings;
+
+        public FakeAssistantSettingsRepository(AssistantSettings settings)
+        {
+            this.settings = settings;
+        }
+
+        public AssistantSettings Get()
+        {
+            return settings;
+        }
+
+        public Task SaveAsync(AssistantSettings settings, CancellationToken cancellationToken = default)
+        {
+            this.settings = settings;
+            return Task.CompletedTask;
         }
     }
 

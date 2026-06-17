@@ -13,6 +13,7 @@ public sealed class LayoutNavigationSourceTests
         { "href=\"/notes\"", "Notes" },
         { "href=\"/payments\"", "Reminders" },
         { "href=\"/assistant/confirmations\"", "Confirmations" },
+        { "href=\"/settings\"", "Settings" },
     };
 
     [Theory]

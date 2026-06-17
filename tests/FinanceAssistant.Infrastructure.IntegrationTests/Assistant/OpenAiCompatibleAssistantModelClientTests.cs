@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using FinanceAssistant.Application.Assistant;
+using FinanceAssistant.Application.Assistant.Settings;
 using FinanceAssistant.Infrastructure.Assistant;
 
 namespace FinanceAssistant.Infrastructure.IntegrationTests.Assistant;
@@ -29,11 +30,14 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
                     Encoding.UTF8,
                     "application/json"),
             });
-        var client = CreateClient(handler, new AssistantModelOptions
-        {
-            Endpoint = "http://localhost:11434/v1/chat/completions",
-            Model = "local-model",
-        });
+        var client = CreateClient(
+            handler,
+            new AssistantModelOptions { Model = "local-model" },
+            AssistantSettings.Default with
+            {
+                EndpointUrl = "http://localhost/v1/chat/completions",
+                EndpointPort = 11434,
+            });
 
         var result = await client.CompleteAsync(SampleRequest());
 
@@ -108,11 +112,15 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
     public async Task RemoteEndpointIsBlockedWithoutExplicitAllow()
     {
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK));
-        var client = CreateClient(handler, new AssistantModelOptions
-        {
-            Endpoint = "https://models.example.test/v1/chat/completions",
-            AllowRemote = false,
-        });
+        var client = CreateClient(
+            handler,
+            new AssistantModelOptions(),
+            AssistantSettings.Default with
+            {
+                EndpointUrl = "https://models.example.test/v1/chat/completions",
+                EndpointPort = 443,
+                AllowRemoteEndpoint = false,
+            });
 
         var result = await client.CompleteAsync(SampleRequest());
 
@@ -144,11 +152,15 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
                     Encoding.UTF8,
                     "application/json"),
             });
-        var client = CreateClient(handler, new AssistantModelOptions
-        {
-            Endpoint = "https://models.example.test/v1/chat/completions",
-            AllowRemote = true,
-        });
+        var client = CreateClient(
+            handler,
+            new AssistantModelOptions(),
+            AssistantSettings.Default with
+            {
+                EndpointUrl = "https://models.example.test/v1/chat/completions",
+                EndpointPort = 443,
+                AllowRemoteEndpoint = true,
+            });
 
         var result = await client.CompleteAsync(SampleRequest());
 
@@ -167,7 +179,7 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
 
         var disclosure = client.GetConfigurationDisclosure();
 
-        Assert.Equal(new Uri(AssistantModelOptions.DefaultEndpoint), disclosure.Endpoint);
+        Assert.Equal(new Uri("http://localhost:8080/v1/chat/completions"), disclosure.Endpoint);
         Assert.False(disclosure.IsRemoteEndpoint);
         Assert.False(disclosure.RequiresRemoteDisclosure);
     }
@@ -176,7 +188,18 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
         HttpMessageHandler handler,
         AssistantModelOptions options)
     {
-        return new OpenAiCompatibleAssistantModelClient(new HttpClient(handler), options);
+        return CreateClient(handler, options, AssistantSettings.Default);
+    }
+
+    private static OpenAiCompatibleAssistantModelClient CreateClient(
+        HttpMessageHandler handler,
+        AssistantModelOptions options,
+        AssistantSettings settings)
+    {
+        return new OpenAiCompatibleAssistantModelClient(
+            new HttpClient(handler),
+            options,
+            new FakeAssistantSettingsRepository(settings));
     }
 
     private static AssistantModelRequest SampleRequest()
@@ -225,6 +248,26 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
                 : await request.Content.ReadAsStringAsync(cancellationToken);
 
             return response;
+        }
+    }
+
+    private sealed class FakeAssistantSettingsRepository : IAssistantSettingsRepository
+    {
+        private readonly AssistantSettings settings;
+
+        public FakeAssistantSettingsRepository(AssistantSettings settings)
+        {
+            this.settings = settings;
+        }
+
+        public AssistantSettings Get()
+        {
+            return settings;
+        }
+
+        public Task SaveAsync(AssistantSettings settings, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
         }
     }
 

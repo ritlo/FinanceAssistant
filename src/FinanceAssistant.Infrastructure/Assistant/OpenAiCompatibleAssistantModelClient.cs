@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using FinanceAssistant.Application.Assistant;
+using FinanceAssistant.Application.Assistant.Settings;
 
 namespace FinanceAssistant.Infrastructure.Assistant;
 
@@ -11,27 +12,33 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
 
     private readonly HttpClient httpClient;
     private readonly AssistantModelOptions options;
+    private readonly IAssistantSettingsRepository settingsRepository;
 
     public OpenAiCompatibleAssistantModelClient(
         HttpClient httpClient,
-        AssistantModelOptions options)
+        AssistantModelOptions options,
+        IAssistantSettingsRepository settingsRepository)
     {
         this.httpClient = httpClient;
         this.options = options;
+        this.settingsRepository = settingsRepository;
     }
 
     public AssistantConfigurationDisclosure GetConfigurationDisclosure()
     {
-        var endpoint = GetEndpoint();
+        var settings = settingsRepository.Get();
+        var endpoint = settings.BuildEndpointUri();
         var isRemote = !endpoint.IsLoopback;
         return new AssistantConfigurationDisclosure(
             endpoint,
             string.IsNullOrWhiteSpace(options.Model) ? AssistantModelOptions.DefaultModel : options.Model,
             isRemote,
-            options.AllowRemote,
-            RequiresRemoteDisclosure: isRemote && options.AllowRemote,
-            WarningMessage: isRemote && options.AllowRemote
-                ? "Assistant model requests may send financial or extracted document content outside this machine."
+            settings.AllowRemoteEndpoint,
+            RequiresRemoteDisclosure: isRemote,
+            WarningMessage: isRemote
+                ? settings.AllowRemoteEndpoint
+                    ? "Assistant model requests may send financial or extracted document content outside this machine."
+                    : "Remote assistant endpoint is configured but blocked until remote access is explicitly allowed."
                 : null);
     }
 
@@ -87,20 +94,6 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
                 "Assistant endpoint is unavailable.",
                 disclosure);
         }
-    }
-
-    private Uri GetEndpoint()
-    {
-        var endpoint = string.IsNullOrWhiteSpace(options.Endpoint)
-            ? AssistantModelOptions.DefaultEndpoint
-            : options.Endpoint;
-
-        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri))
-        {
-            return new Uri(AssistantModelOptions.DefaultEndpoint);
-        }
-
-        return uri;
     }
 
     private static StringContent JsonContent(AssistantModelRequest request, string model)

@@ -12,4 +12,5 @@ internal static class LiteDbCollectionNames
     public const string DocumentMetadata = "document_metadata";
     public const string ParsedDocuments = "parsed_documents";
     public const string AssistantConfirmations = "assistant_confirmations";
+    public const string AssistantSettings = "assistant_settings";
 }

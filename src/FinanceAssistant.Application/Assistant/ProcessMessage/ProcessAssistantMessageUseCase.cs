@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using FinanceAssistant.Application.Assistant.Confirmations;
 using FinanceAssistant.Application.Assistant.Confirmations.CreateAssistantProposal;
+using FinanceAssistant.Application.Assistant.Settings;
 using FinanceAssistant.Application.Common;
 using FinanceAssistant.Application.Documents.GetParsedDocument;
 using FinanceAssistant.Application.Finance.Summaries.GetMonthlySummary;
@@ -30,6 +31,7 @@ public sealed class ProcessAssistantMessageUseCase
     private readonly IAssistantModelClient modelClient;
     private readonly AssistantModelOutputParser parser;
     private readonly IClock clock;
+    private readonly IAssistantSettingsRepository settingsRepository;
     private readonly GetTransactionsUseCase getTransactions;
     private readonly GetMonthlySummaryUseCase getMonthlySummary;
     private readonly ListNotesUseCase listNotes;
@@ -42,6 +44,7 @@ public sealed class ProcessAssistantMessageUseCase
         IAssistantModelClient modelClient,
         AssistantModelOutputParser parser,
         IClock clock,
+        IAssistantSettingsRepository settingsRepository,
         GetTransactionsUseCase getTransactions,
         GetMonthlySummaryUseCase getMonthlySummary,
         ListNotesUseCase listNotes,
@@ -53,6 +56,7 @@ public sealed class ProcessAssistantMessageUseCase
         this.modelClient = modelClient;
         this.parser = parser;
         this.clock = clock;
+        this.settingsRepository = settingsRepository;
         this.getTransactions = getTransactions;
         this.getMonthlySummary = getMonthlySummary;
         this.listNotes = listNotes;
@@ -183,6 +187,11 @@ public sealed class ProcessAssistantMessageUseCase
         AssistantWriteProposalToolCall toolCall,
         CancellationToken cancellationToken)
     {
+        if (!settingsRepository.Get().WriteProposalsEnabled)
+        {
+            return ProcessAssistantMessageResult.Error("Assistant write proposals are disabled in Settings.");
+        }
+
         if (toolCall.Proposal is ProposeTransactionProposal transactionProposal)
         {
             return await CreateTransactionProposalAsync(transactionProposal, cancellationToken);
@@ -205,6 +214,11 @@ public sealed class ProcessAssistantMessageUseCase
         ProposeTransactionProposal proposal,
         CancellationToken cancellationToken)
     {
+        if (!settingsRepository.Get().WriteProposalsEnabled)
+        {
+            return ProcessAssistantMessageResult.Error("Assistant write proposals are disabled in Settings.");
+        }
+
         var confirmation = await createProposal.ExecuteAsync(
             new CreateAssistantProposalRequest(AssistantToolNames.ProposeTransaction, proposal),
             cancellationToken);
