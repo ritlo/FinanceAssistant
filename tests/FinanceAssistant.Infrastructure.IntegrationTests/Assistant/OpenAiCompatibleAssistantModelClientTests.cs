@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using FinanceAssistant.Application.Assistant;
 using FinanceAssistant.Infrastructure.Assistant;
 
@@ -39,10 +40,56 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
         Assert.True(result.IsAvailable);
         Assert.Equal("{\"name\":\"ReadTransactions\",\"parameters\":{}}", result.Content);
         Assert.NotNull(handler.RequestBody);
-        Assert.Contains("\"model\":\"local-model\"", handler.RequestBody, StringComparison.Ordinal);
-        Assert.Contains("\"role\":\"system\"", handler.RequestBody, StringComparison.Ordinal);
-        Assert.Contains("\"role\":\"user\"", handler.RequestBody, StringComparison.Ordinal);
-        Assert.Contains("\"tools\"", handler.RequestBody, StringComparison.Ordinal);
+        using var document = JsonDocument.Parse(handler.RequestBody);
+        var root = document.RootElement;
+        Assert.Equal("local-model", root.GetProperty("model").GetString());
+        Assert.Contains(root.GetProperty("messages").EnumerateArray(), message => message.GetProperty("role").GetString() == "system");
+        Assert.Contains(root.GetProperty("messages").EnumerateArray(), message => message.GetProperty("role").GetString() == "user");
+
+        var tool = Assert.Single(root.GetProperty("tools").EnumerateArray());
+        Assert.Equal("function", tool.GetProperty("type").GetString());
+        var function = tool.GetProperty("function");
+        Assert.Equal(AssistantToolNames.ReadTransactions, function.GetProperty("name").GetString());
+        Assert.Equal("Read transactions for the server-resolved local profile.", function.GetProperty("description").GetString());
+        Assert.Equal(JsonValueKind.Object, function.GetProperty("parameters").ValueKind);
+        Assert.False(function.TryGetProperty("kind", out _));
+    }
+
+    [Fact]
+    public async Task ToolCallResponseIsConvertedToParserInputJson()
+    {
+        var handler = new RecordingHandler(
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                      "choices": [
+                        {
+                          "message": {
+                            "tool_calls": [
+                              {
+                                "type": "function",
+                                "function": {
+                                  "name": "ReadTransactions",
+                                  "arguments": "{}"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json"),
+            });
+        var client = CreateClient(handler, new AssistantModelOptions());
+
+        var result = await client.CompleteAsync(SampleRequest());
+
+        Assert.True(result.IsAvailable);
+        Assert.Equal("{\"name\":\"ReadTransactions\",\"parameters\":{}}", result.Content);
     }
 
     [Fact]
@@ -139,7 +186,19 @@ public sealed class OpenAiCompatibleAssistantModelClientTests
             "show my data",
             new Dictionary<string, string>
             {
-                [AssistantToolNames.ReadTransactions] = "{}",
+                [AssistantToolNames.ReadTransactions] =
+                    """
+                    {
+                      "name": "ReadTransactions",
+                      "kind": "read",
+                      "description": "Read transactions for the server-resolved local profile.",
+                      "parameters": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {}
+                      }
+                    }
+                    """,
             });
     }
 

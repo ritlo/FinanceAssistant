@@ -113,11 +113,7 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
                 new { role = "system", content = request.SystemPrompt },
                 new { role = "user", content = request.UserMessage },
             },
-            tools = request.ToolSchemas.Select(schema => new
-            {
-                name = schema.Key,
-                schema = schema.Value,
-            }),
+            tools = request.ToolSchemas.Select(CreateToolDefinition).ToArray(),
             stream = false,
         };
 
@@ -125,6 +121,32 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
             JsonSerializer.Serialize(payload, SerializerOptions),
             Encoding.UTF8,
             "application/json");
+    }
+
+    private static OpenAiToolDefinition CreateToolDefinition(KeyValuePair<string, string> schema)
+    {
+        using var document = JsonDocument.Parse(schema.Value);
+        var root = document.RootElement;
+
+        var description = root.TryGetProperty("description", out var descriptionElement)
+            && descriptionElement.ValueKind == JsonValueKind.String
+            ? descriptionElement.GetString() ?? string.Empty
+            : string.Empty;
+
+        var parameters = root.TryGetProperty("parameters", out var parametersElement)
+            && parametersElement.ValueKind == JsonValueKind.Object
+            ? parametersElement.Clone()
+            : EmptyJsonObject();
+
+        return new OpenAiToolDefinition(
+            "function",
+            new OpenAiFunctionDefinition(schema.Key, description, parameters));
+    }
+
+    private static JsonElement EmptyJsonObject()
+    {
+        using var document = JsonDocument.Parse("{}");
+        return document.RootElement.Clone();
     }
 
     private static string? ExtractContent(JsonElement root)
@@ -136,13 +158,96 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
 
         var firstChoice = choices.EnumerateArray().FirstOrDefault();
         if (firstChoice.ValueKind != JsonValueKind.Object
-            || !firstChoice.TryGetProperty("message", out var message)
-            || !message.TryGetProperty("content", out var content)
-            || content.ValueKind != JsonValueKind.String)
+            || !firstChoice.TryGetProperty("message", out var message))
         {
             return null;
         }
 
-        return content.GetString();
+        if (message.TryGetProperty("content", out var content)
+            && content.ValueKind == JsonValueKind.String
+            && !string.IsNullOrWhiteSpace(content.GetString()))
+        {
+            return content.GetString();
+        }
+
+        return ExtractToolCallContent(message);
     }
+
+    private static string? ExtractToolCallContent(JsonElement message)
+    {
+        if (!message.TryGetProperty("tool_calls", out var toolCalls)
+            || toolCalls.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var firstToolCall = toolCalls.EnumerateArray().FirstOrDefault();
+        if (firstToolCall.ValueKind != JsonValueKind.Object
+            || !firstToolCall.TryGetProperty("function", out var function)
+            || !function.TryGetProperty("name", out var nameElement)
+            || nameElement.ValueKind != JsonValueKind.String
+            || string.IsNullOrWhiteSpace(nameElement.GetString()))
+        {
+            return null;
+        }
+
+        var parameters = ExtractToolCallArguments(function);
+        if (parameters.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Serialize(
+            new AssistantToolInvocationContent(nameElement.GetString()!, parameters),
+            SerializerOptions);
+    }
+
+    private static JsonElement ExtractToolCallArguments(JsonElement function)
+    {
+        if (!function.TryGetProperty("arguments", out var arguments))
+        {
+            return EmptyJsonObject();
+        }
+
+        if (arguments.ValueKind == JsonValueKind.Object)
+        {
+            return arguments.Clone();
+        }
+
+        if (arguments.ValueKind != JsonValueKind.String)
+        {
+            return default;
+        }
+
+        var argumentText = arguments.GetString();
+        if (string.IsNullOrWhiteSpace(argumentText))
+        {
+            return EmptyJsonObject();
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(argumentText);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? document.RootElement.Clone()
+                : default;
+        }
+        catch (JsonException)
+        {
+            return default;
+        }
+    }
+
+    private sealed record OpenAiToolDefinition(
+        string Type,
+        OpenAiFunctionDefinition Function);
+
+    private sealed record OpenAiFunctionDefinition(
+        string Name,
+        string Description,
+        JsonElement Parameters);
+
+    private sealed record AssistantToolInvocationContent(
+        string Name,
+        JsonElement Parameters);
 }
