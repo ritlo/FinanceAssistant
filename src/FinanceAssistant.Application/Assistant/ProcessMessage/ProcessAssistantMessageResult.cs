@@ -11,11 +11,23 @@ public sealed record ProcessAssistantMessageResult(
 {
     public bool RequiresConfirmation => ConfirmationToken is not null;
 
+    public static ProcessAssistantMessageResult Chat(string message)
+    {
+        return new ProcessAssistantMessageResult(
+            Succeeded: true,
+            message,
+            ToolName: null,
+            ToolKind: null,
+            PayloadJson: null,
+            ConfirmationToken: null,
+            OperationFingerprint: null);
+    }
+
     public static ProcessAssistantMessageResult Success(
         string message,
         string toolName,
         AssistantToolCallKind toolKind,
-        string payloadJson,
+        string? payloadJson = null,
         Guid? confirmationToken = null,
         string? operationFingerprint = null)
     {

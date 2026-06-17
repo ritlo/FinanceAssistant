@@ -12,7 +12,8 @@ public sealed record AssistantToolPayloadDisplayModel(
     {
         ArgumentNullException.ThrowIfNull(result);
 
-        if (string.IsNullOrWhiteSpace(result.PayloadJson))
+        if (string.IsNullOrWhiteSpace(result.PayloadJson)
+            || result.ToolKind is AssistantToolCallKind.Read or AssistantToolCallKind.Advice)
         {
             return null;
         }

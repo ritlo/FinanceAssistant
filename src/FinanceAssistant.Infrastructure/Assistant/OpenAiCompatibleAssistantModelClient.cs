@@ -108,11 +108,7 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
         var payload = new
         {
             model,
-            messages = new object[]
-            {
-                new { role = "system", content = request.SystemPrompt },
-                new { role = "user", content = request.UserMessage },
-            },
+            messages = CreateMessages(request),
             tools = request.ToolSchemas.Select(CreateToolDefinition).ToArray(),
             stream = false,
         };
@@ -121,6 +117,25 @@ public sealed class OpenAiCompatibleAssistantModelClient : IAssistantModelClient
             JsonSerializer.Serialize(payload, SerializerOptions),
             Encoding.UTF8,
             "application/json");
+    }
+
+    private static object[] CreateMessages(AssistantModelRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RuntimeContext))
+        {
+            return
+            [
+                new { role = "system", content = request.SystemPrompt },
+                new { role = "user", content = request.UserMessage },
+            ];
+        }
+
+        return
+        [
+            new { role = "system", content = request.SystemPrompt },
+            new { role = "system", content = request.RuntimeContext },
+            new { role = "user", content = request.UserMessage },
+        ];
     }
 
     private static OpenAiToolDefinition CreateToolDefinition(KeyValuePair<string, string> schema)

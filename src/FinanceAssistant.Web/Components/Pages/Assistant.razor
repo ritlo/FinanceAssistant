@@ -14,6 +14,8 @@
 @inject ProcessAssistantMessageUseCase ProcessAssistantMessage
 @inject TransactionDashboardState DashboardState
 
+<script type="module" src="@Assets["Components/Pages/Assistant.razor.js"]"></script>
+
 <PageTitle>Assistant</PageTitle>
 
 <main class="assistant-workspace">
@@ -138,7 +140,7 @@
                     </div>
                     <div class="composer-row">
                         <label class="visually-hidden" for="assistant-message">Assistant message</label>
-                        <textarea id="assistant-message" @bind="Message" rows="4" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
+                        <textarea id="assistant-message" @bind="Message" rows="4" data-enter-submits="true" data-submit-key="@AssistantComposerKeyboardPolicy.SubmitKey" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
                         <button type="submit" class="primary-button">
                             <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path d="M22 2 11 13" />
@@ -286,7 +288,8 @@
 
             Conversation.Add(new AssistantConversationEntry("You", userMessage, IsUser: true, Result: null));
 
-            Result = await ProcessAssistantMessage.ExecuteAsync(new ProcessAssistantMessageRequest(userMessage));
+            Result = await ProcessAssistantMessage.ExecuteAsync(
+                new ProcessAssistantMessageRequest(userMessage, SelectedYear, DashboardState.SelectedMonth));
             Conversation.Add(new AssistantConversationEntry("FinanceAssistant", Result.Message, IsUser: false, Result));
             ErrorMessage = null;
             Message = string.Empty;

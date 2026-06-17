@@ -1,7 +1,7 @@
 {
   "name": "GetMonthlySummary",
   "kind": "read",
-  "description": "Read a monthly income and expense summary for the server-resolved local profile.",
+  "description": "Read a monthly income and expense summary for questions like how much was spent this month or what the active month totals are.",
   "parameters": {
     "type": "object",
     "additionalProperties": false,

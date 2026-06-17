@@ -3,7 +3,8 @@ namespace FinanceAssistant.Application.Assistant;
 public sealed record AssistantModelRequest(
     string SystemPrompt,
     string UserMessage,
-    IReadOnlyDictionary<string, string> ToolSchemas);
+    IReadOnlyDictionary<string, string> ToolSchemas,
+    string RuntimeContext = "");
 
 public sealed record AssistantConfigurationDisclosure(
     Uri Endpoint,

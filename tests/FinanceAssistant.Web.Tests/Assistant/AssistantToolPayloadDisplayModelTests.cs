@@ -7,7 +7,7 @@ namespace FinanceAssistant.Web.Tests.Assistant;
 public sealed class AssistantToolPayloadDisplayModelTests
 {
     [Fact]
-    public void FromResultKeepsPayloadAsInertText()
+    public void FromResultHidesReadPayloadWhenFriendlyMessageExists()
     {
         var payload = """{"note":"<script>alert('x')</script>"}""";
         var result = ProcessAssistantMessageResult.Success(
@@ -18,10 +18,27 @@ public sealed class AssistantToolPayloadDisplayModelTests
 
         var model = AssistantToolPayloadDisplayModel.FromResult(result);
 
+        Assert.Null(model);
+    }
+
+    [Fact]
+    public void FromResultKeepsWriteProposalPayloadAsInertText()
+    {
+        var payload = """{"serializedProposal":"<script>alert('x')</script>"}""";
+        var result = ProcessAssistantMessageResult.Success(
+            "Assistant proposal requires confirmation.",
+            "ProposeTransaction",
+            AssistantToolCallKind.WriteProposal,
+            payload,
+            Guid.NewGuid(),
+            "fingerprint");
+
+        var model = AssistantToolPayloadDisplayModel.FromResult(result);
+
         Assert.NotNull(model);
         Assert.Equal(payload, model.Text);
-        Assert.Equal("ReadParsedDocument", model.ToolName);
-        Assert.Equal("Read-only", model.KindLabel);
+        Assert.Equal("ProposeTransaction", model.ToolName);
+        Assert.Equal("Needs confirmation", model.KindLabel);
     }
 
     [Fact]

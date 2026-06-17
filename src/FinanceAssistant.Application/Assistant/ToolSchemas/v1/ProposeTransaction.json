@@ -1,7 +1,7 @@
 {
   "name": "ProposeTransaction",
   "kind": "writeProposal",
-  "description": "Propose a transaction write. Confirmation is required before persistence.",
+  "description": "Propose a transaction write for messages where the user spent, paid, bought, purchased, received income, or asked to add a transaction. Confirmation is required before persistence.",
   "parameters": {
     "type": "object",
     "additionalProperties": false,

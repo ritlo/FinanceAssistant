@@ -48,9 +48,11 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(AssistantToolNames.ReadTransactions, result.ToolName);
-        Assert.Contains("Lunch", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Contains("Lunch", result.Message, StringComparison.Ordinal);
+        Assert.Null(result.PayloadJson);
         Assert.Contains(AssistantToolNames.ReadTransactions, fixture.Model.LastRequest!.ToolSchemas.Keys);
         Assert.Equal("system prompt", fixture.Model.LastRequest.SystemPrompt);
+        Assert.Contains("Current local date: 2026-06-16", fixture.Model.LastRequest.RuntimeContext, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -78,9 +80,10 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(AssistantToolNames.AnalyzeSpendingPatterns, result.ToolName);
-        Assert.Contains("Total expenses", result.PayloadJson, StringComparison.Ordinal);
-        Assert.Contains("40.00", result.PayloadJson, StringComparison.Ordinal);
-        Assert.Contains("Groceries", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Contains("Total expenses", result.Message, StringComparison.Ordinal);
+        Assert.Contains("40.00", result.Message, StringComparison.Ordinal);
+        Assert.Contains("Groceries", result.Message, StringComparison.Ordinal);
+        Assert.Null(result.PayloadJson);
     }
 
     [Fact]
@@ -108,6 +111,82 @@ public sealed class ProcessAssistantMessageUseCaseTests
     }
 
     [Fact]
+    public async Task PlainModelTextReturnsChatResponse()
+    {
+        var fixture = new Fixture("Hello. I can help with spending, notes, reminders, and documents.");
+
+        var result = await fixture.Process.ExecuteAsync(new ProcessAssistantMessageRequest("hello"));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Hello. I can help with spending, notes, reminders, and documents.", result.Message);
+        Assert.Null(result.ToolName);
+        Assert.Null(result.PayloadJson);
+    }
+
+    [Fact]
+    public async Task SpendingMessageCreatesTransactionProposalWithoutTrustingWrongReadTool()
+    {
+        var fixture = new Fixture(
+            """
+            {
+              "name": "ReadTransactions",
+              "parameters": {}
+            }
+            """);
+
+        var result = await fixture.Process.ExecuteAsync(
+            new ProcessAssistantMessageRequest("I spent $5 at Burger King this morning"));
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.RequiresConfirmation);
+        Assert.Equal(AssistantToolNames.ProposeTransaction, result.ToolName);
+        Assert.Contains("expense preview for 5.00", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Burger King", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Single(fixture.Confirmations.Records);
+        Assert.Empty(fixture.Transactions.Transactions);
+        Assert.Null(fixture.Model.LastRequest);
+    }
+
+    [Fact]
+    public async Task TransactionCommandWithImplicitExpenseUsesTodayAndConfirmation()
+    {
+        var fixture = new Fixture("{}", new DateTimeOffset(2026, 6, 17, 9, 0, 0, TimeSpan.Zero));
+
+        var result = await fixture.Process.ExecuteAsync(
+            new ProcessAssistantMessageRequest("Add transaction: $500 in broken arm"));
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.RequiresConfirmation);
+        Assert.Equal(AssistantToolNames.ProposeTransaction, result.ToolName);
+        Assert.Contains("broken arm", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Contains("2026-06-17", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Contains("Expense", result.PayloadJson, StringComparison.Ordinal);
+        Assert.Empty(fixture.Transactions.Transactions);
+    }
+
+    [Fact]
+    public async Task MonthlySpendQuestionReturnsFriendlySummaryWithoutRawReadCompletion()
+    {
+        var fixture = new Fixture("{}");
+        fixture.Transactions.Add(Transaction.Create(
+            fixture.ProfileId,
+            Money.Create(40m),
+            TransactionType.Expense,
+            new DateOnly(2026, 6, 5),
+            "Groceries",
+            fixture.Category));
+
+        var result = await fixture.Process.ExecuteAsync(new ProcessAssistantMessageRequest("How much have I spent this month?"));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(AssistantToolNames.GetMonthlySummary, result.ToolName);
+        Assert.Contains("You spent 40.00", result.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("completed", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(result.PayloadJson);
+        Assert.Null(fixture.Model.LastRequest);
+    }
+
+    [Fact]
     public async Task HostileModelOutputReturnsControlledErrorWithoutSideEffects()
     {
         var fixture = new Fixture(
@@ -131,8 +210,9 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
     private sealed class Fixture
     {
-        public Fixture(string modelOutput)
+        public Fixture(string modelOutput, DateTimeOffset? utcNow = null)
         {
+            Clock = new FixedClock(utcNow ?? new DateTimeOffset(2026, 6, 16, 12, 0, 0, TimeSpan.Zero));
             CurrentProfile = new FixedCurrentProfileProvider(ProfileId);
             Category = Category.Create(ProfileId, "Groceries", TransactionType.Expense);
             Categories.Add(Category);
@@ -149,6 +229,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
                 new FakeAssistantPromptCatalog(),
                 Model,
                 new AssistantModelOutputParser(),
+                Clock,
                 getTransactions,
                 getMonthlySummary,
                 listNotes,
@@ -166,7 +247,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
         public FakeReminderRepository Reminders { get; } = new();
         public FakeParsedDocumentRepository ParsedDocuments { get; } = new();
         public FakeAssistantConfirmationRepository Confirmations { get; } = new();
-        public FixedClock Clock { get; } = new();
+        public FixedClock Clock { get; }
         public FakeAssistantModelClient Model { get; }
         public ProcessAssistantMessageUseCase Process { get; }
     }
@@ -237,7 +318,12 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
     private sealed class FixedClock : IClock
     {
-        public DateTimeOffset UtcNow { get; } = new(2026, 6, 16, 12, 0, 0, TimeSpan.Zero);
+        public FixedClock(DateTimeOffset utcNow)
+        {
+            UtcNow = utcNow;
+        }
+
+        public DateTimeOffset UtcNow { get; }
     }
 
     private sealed class FakeAssistantConfirmationRepository : IAssistantConfirmationRepository
@@ -322,16 +408,16 @@ public sealed class ProcessAssistantMessageUseCaseTests
 
     private sealed class FakeTransactionRepository : ITransactionRepository
     {
-        private readonly List<Transaction> transactions = [];
+        public List<Transaction> Transactions { get; } = [];
 
         public void Add(Transaction transaction)
         {
-            transactions.Add(transaction);
+            Transactions.Add(transaction);
         }
 
         public Task AddTransactionAsync(Transaction transaction, CancellationToken cancellationToken = default)
         {
-            transactions.Add(transaction);
+            Transactions.Add(transaction);
             return Task.CompletedTask;
         }
 
@@ -340,7 +426,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<Transaction>>(
-                transactions.Where(transaction => transaction.ProfileId == profileId).ToArray());
+                Transactions.Where(transaction => transaction.ProfileId == profileId).ToArray());
         }
 
         public Task<Transaction?> GetTransactionAsync(
@@ -349,7 +435,7 @@ public sealed class ProcessAssistantMessageUseCaseTests
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult<Transaction?>(
-                transactions.SingleOrDefault(transaction => transaction.ProfileId == profileId && transaction.Id == transactionId));
+                Transactions.SingleOrDefault(transaction => transaction.ProfileId == profileId && transaction.Id == transactionId));
         }
 
         public Task UpdateTransactionAsync(Transaction transaction, CancellationToken cancellationToken = default)
