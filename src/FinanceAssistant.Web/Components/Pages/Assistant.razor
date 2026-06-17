@@ -68,9 +68,9 @@
                     <span>Recent transactions</span>
                     <strong>@Transactions.Count</strong>
                 </div>
-                <div class="summary-stat">
-                    <span>Assistant writes</span>
-                    <strong>Confirm first</strong>
+                <div class="summary-stat net-balance">
+                    <span>Net balance</span>
+                    <strong class="amount @(NetBalance < 0 ? "negative" : "positive")">@FormatSignedAmount(NetBalance)</strong>
                 </div>
             </div>
         }
@@ -268,6 +268,12 @@
 
     private int SelectedYear => DashboardState.SelectedYear;
 
+    private int SelectedMonth => DashboardState.SelectedMonth;
+
+    private decimal NetBalance => Transactions
+        .Where(transaction => transaction.Date.Year == SelectedYear && transaction.Date.Month == SelectedMonth)
+        .Sum(transaction => transaction.Type == TransactionType.Income ? transaction.Amount : -transaction.Amount);
+
     private string SelectedMonthName => string.IsNullOrWhiteSpace(DashboardState.SelectedMonthName)
         ? new DateOnly(DashboardState.SelectedYear, DashboardState.SelectedMonth, 1).ToString("MMMM")
         : DashboardState.SelectedMonthName;
@@ -386,6 +392,12 @@
     {
         var sign = transaction.Type == TransactionType.Expense ? "-" : "+";
         return $"{sign}{transaction.Amount:0.00}";
+    }
+
+    private static string FormatSignedAmount(decimal amount)
+    {
+        var sign = amount < 0 ? "-" : "+";
+        return $"{sign}{Math.Abs(amount):0.00}";
     }
 
     private Task OnDashboardStateChangedAsync()

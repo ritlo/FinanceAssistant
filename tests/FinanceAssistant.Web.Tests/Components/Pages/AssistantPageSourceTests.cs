@@ -27,6 +27,18 @@ public sealed class AssistantPageSourceTests
     }
 
     [Fact]
+    public void AssistantPageShowsNetBalanceInsteadOfAssistantWritesStat()
+    {
+        var source = ReadProjectFile("src/FinanceAssistant.Web/Components/Pages/Assistant.razor");
+
+        Assert.Contains("<span>Net balance</span>", source, StringComparison.Ordinal);
+        Assert.Contains("@FormatSignedAmount(NetBalance)", source, StringComparison.Ordinal);
+        Assert.Contains("private decimal NetBalance =>", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("<span>Assistant writes</span>", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("<strong>Confirm first</strong>", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void WebTestsDoNotUseLiveBrowserOrComponentPackages()
     {
         var project = ReadProjectFile("tests/FinanceAssistant.Web.Tests/FinanceAssistant.Web.Tests.csproj");
