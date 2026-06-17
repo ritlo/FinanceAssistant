@@ -1118,7 +1118,12 @@ a:focus-visible {
 	align-content: start;
 	gap: 18px;
 	padding: 22px;
-	background: linear-gradient(180deg, rgba(121, 184, 255, 0.05), rgba(79, 209, 139, 0.03) 58%, transparent);
+	background: linear-gradient(
+		180deg,
+		rgba(121, 184, 255, 0.05),
+		rgba(79, 209, 139, 0.03) 58%,
+		transparent
+	);
 }
 
 .message {

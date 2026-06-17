@@ -464,3 +464,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+.agents/
+skills-lock.json
+.mcp.json
