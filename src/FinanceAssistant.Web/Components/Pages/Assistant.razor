@@ -140,7 +140,7 @@
                     </div>
                     <div class="composer-row">
                         <label class="visually-hidden" for="assistant-message">Assistant message</label>
-                        <textarea id="assistant-message" @bind="Message" rows="4" data-enter-submits="true" data-submit-key="@AssistantComposerKeyboardPolicy.SubmitKey" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
+                        <textarea id="assistant-message" @bind="Message" @bind:event="oninput" rows="4" data-enter-submits="true" data-submit-key="@AssistantComposerKeyboardPolicy.SubmitKey" data-send-button-selector="@AssistantComposerKeyboardPolicy.SendButtonSelector" placeholder="Ask the local assistant about spending, documents, notes, or reminders..."></textarea>
                         <button type="submit" class="primary-button">
                             <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path d="M22 2 11 13" />

@@ -10,6 +10,12 @@ public sealed class AssistantComposerKeyboardPolicyTests
         Assert.Equal("Enter", AssistantComposerKeyboardPolicy.SubmitKey);
     }
 
+    [Fact]
+    public void SendButtonSelectorTargetsPrimaryButton()
+    {
+        Assert.Equal("button.primary-button", AssistantComposerKeyboardPolicy.SendButtonSelector);
+    }
+
     [Theory]
     [InlineData("Enter", false, true)]
     [InlineData("Enter", true, false)]
