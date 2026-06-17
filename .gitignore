@@ -2,6 +2,9 @@
 bin/
 coverage/
 
+# Local worktrees
+.worktrees/
+
 # IDE/user files
 .vscode/
 .idea/
