@@ -1,0 +1,27 @@
+#blazor-error-ui {
+	color-scheme: dark;
+	background: #531d1d;
+	border-top: 1px solid #7c2d2d;
+	bottom: 0;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+	box-sizing: border-box;
+	color: #fff5f4;
+	display: none;
+	left: 0;
+	padding: 0.75rem 1.25rem;
+	position: fixed;
+	width: 100%;
+	z-index: 1000;
+}
+
+#blazor-error-ui a {
+	color: #ffffff;
+	font-weight: 700;
+}
+
+#blazor-error-ui .dismiss {
+	cursor: pointer;
+	position: absolute;
+	right: 0.75rem;
+	top: 0.7rem;
+}

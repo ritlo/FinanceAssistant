@@ -1,0 +1,16 @@
+namespace FinanceAssistant.Infrastructure.Persistence;
+
+internal static class LiteDbCollectionNames
+{
+    public const string Metadata = "metadata";
+    public const string LocalProfiles = "local_profiles";
+    public const string Categories = "categories";
+    public const string CategorizationRules = "categorization_rules";
+    public const string Transactions = "transactions";
+    public const string Notes = "notes";
+    public const string PaymentReminders = "payment_reminders";
+    public const string DocumentMetadata = "document_metadata";
+    public const string ParsedDocuments = "parsed_documents";
+    public const string AssistantConfirmations = "assistant_confirmations";
+    public const string AssistantSettings = "assistant_settings";
+}

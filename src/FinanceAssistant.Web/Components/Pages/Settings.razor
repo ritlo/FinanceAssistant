@@ -1,0 +1,128 @@
+@page "/settings"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.Assistant
+@using FinanceAssistant.Application.Assistant.Settings.GetAssistantSettings
+@using FinanceAssistant.Application.Assistant.Settings.UpdateAssistantSettings
+@using FinanceAssistant.Domain.Common
+@using FinanceAssistant.Web.Assistant.Settings
+@inject GetAssistantSettingsUseCase GetSettings
+@inject UpdateAssistantSettingsUseCase UpdateSettings
+@inject IAssistantModelClient AssistantModelClient
+
+<PageTitle>Settings</PageTitle>
+
+<main class="supporting-page settings-shell">
+    <section class="panel settings-entry">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Settings</h2>
+                <p>Configure assistant write proposals and the local OpenAI-compatible endpoint.</p>
+            </div>
+            <span class="pill">Local settings</span>
+        </div>
+
+        <div class="panel-body">
+            <EditForm Model="Form" OnValidSubmit="SaveAsync" FormName="assistant-settings">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <label class="settings-toggle">
+                    <InputCheckbox @bind-Value="Form.WriteProposalsEnabled" />
+                    <span>
+                        <strong>Enable assistant write proposals</strong>
+                        <small>When off, assistant reads and chat still work, but write previews are blocked. Confirmations are still required when proposals are on.</small>
+                    </span>
+                </label>
+
+                <div class="settings-grid">
+                    <label>
+                        <span>LLM API URL</span>
+                        <InputText @bind-Value="Form.EndpointUrl" />
+                    </label>
+
+                    <label>
+                        <span>LLM API port</span>
+                        <InputNumber @bind-Value="Form.EndpointPort" />
+                    </label>
+                </div>
+
+                <label class="settings-toggle">
+                    <InputCheckbox @bind-Value="Form.AllowRemoteEndpoint" />
+                    <span>
+                        <strong>Allow remote endpoint</strong>
+                        <small>Remote model calls may send financial or document content outside this machine.</small>
+                    </span>
+                </label>
+
+                <button type="submit" class="primary-button">Save settings</button>
+            </EditForm>
+
+            @if (!string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                <p class="status-message">@StatusMessage</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <p class="validation-message">@ErrorMessage</p>
+            }
+        </div>
+    </section>
+
+    <section class="panel settings-disclosure">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Assistant endpoint disclosure</h2>
+                <p>Current endpoint used by the assistant model adapter.</p>
+            </div>
+            <span class="pill">@DisclosureLabel</span>
+        </div>
+
+        <div class="panel-body model-grid">
+            <div class="model-row"><span>Endpoint</span><strong>@Disclosure.Endpoint</strong></div>
+            <div class="model-row"><span>Model</span><strong>@Disclosure.Model</strong></div>
+            <div class="model-row"><span>Location</span><strong>@(Disclosure.IsRemoteEndpoint ? "Remote" : "Local")</strong></div>
+            <div class="model-row"><span>Remote allowed</span><strong>@(Disclosure.IsRemoteAllowed ? "Yes" : "No")</strong></div>
+
+            @if (Disclosure.RequiresRemoteDisclosure && !string.IsNullOrWhiteSpace(Disclosure.WarningMessage))
+            {
+                <p class="validation-message">@Disclosure.WarningMessage</p>
+            }
+        </div>
+    </section>
+</main>
+
+@code {
+    private AssistantSettingsFormModel Form { get; set; } = new();
+
+    private AssistantConfigurationDisclosure Disclosure { get; set; } = default!;
+
+    private string? StatusMessage { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    private string DisclosureLabel => Disclosure.RequiresRemoteDisclosure ? "Remote disclosure" : "Local-first";
+
+    protected override void OnInitialized()
+    {
+        Form = AssistantSettingsFormModel.FromSettings(GetSettings.Execute());
+        Disclosure = AssistantModelClient.GetConfigurationDisclosure();
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            var settings = await UpdateSettings.ExecuteAsync(Form.ToRequest());
+            Form = AssistantSettingsFormModel.FromSettings(settings);
+            Disclosure = AssistantModelClient.GetConfigurationDisclosure();
+            StatusMessage = "Settings saved.";
+            ErrorMessage = null;
+        }
+        catch (DomainValidationException exception)
+        {
+            StatusMessage = null;
+            ErrorMessage = exception.Message;
+        }
+    }
+}

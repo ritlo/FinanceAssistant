@@ -1,0 +1,119 @@
+@page "/assistant/confirmations"
+@rendermode InteractiveServer
+@using FinanceAssistant.Application.Assistant.Confirmations
+@using FinanceAssistant.Application.Assistant.Confirmations.CancelAssistantProposal
+@using FinanceAssistant.Application.Assistant.Confirmations.ConfirmAssistantProposal
+@using FinanceAssistant.Domain.Common
+@using FinanceAssistant.Web.Assistant.Confirmations
+@inject ConfirmAssistantProposalUseCase ConfirmAssistantProposal
+@inject CancelAssistantProposalUseCase CancelAssistantProposal
+
+<PageTitle>Assistant Confirmations</PageTitle>
+
+<main class="supporting-page assistant-shell">
+    <section class="panel assistant-status">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Assistant confirmations</h2>
+                <p>Review a typed assistant proposal token before any write is persisted.</p>
+            </div>
+            <span class="pill">Confirm writes</span>
+        </div>
+
+        <div class="assistant-confirmation-form panel-body">
+            <label>
+                <span>Confirmation token</span>
+                <input @bind="TokenText" />
+            </label>
+            <label>
+                <span>Operation fingerprint</span>
+                <input @bind="Fingerprint" />
+            </label>
+            <div class="transaction-actions">
+                <button type="button" class="primary-button" @onclick="ConfirmAsync">Confirm</button>
+                <button type="button" class="secondary-button cancel-button" @onclick="CancelAsync">Cancel</button>
+            </div>
+        </div>
+
+        @if (Preview is not null)
+        {
+            <article class="list-row assistant-confirmation-preview">
+                <h2>@Preview.ProposalType</h2>
+                <dl class="assistant-config">
+                    <div>
+                        <dt>Status</dt>
+                        <dd>@Preview.Status</dd>
+                    </div>
+                    <div>
+                        <dt>Expires</dt>
+                        <dd>@Preview.ExpiresAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                    </div>
+                </dl>
+                <h3>Proposal</h3>
+                <pre>@Preview.SerializedProposal</pre>
+                @if (!string.IsNullOrWhiteSpace(Preview.CompletedResult))
+                {
+                    <h3>Completed result</h3>
+                    <pre>@Preview.CompletedResult</pre>
+                }
+            </article>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="panel-body compact-panel-body">
+                <p class="validation-message">@ErrorMessage</p>
+            </div>
+        }
+    </section>
+</main>
+
+@code {
+    private string TokenText { get; set; } = string.Empty;
+
+    private string Fingerprint { get; set; } = string.Empty;
+
+    private AssistantConfirmationResult? Result { get; set; }
+
+    private AssistantConfirmationPreviewModel? Preview => Result is null
+        ? null
+        : AssistantConfirmationPreviewModel.FromResult(Result);
+
+    private string? ErrorMessage { get; set; }
+
+    private async Task ConfirmAsync()
+    {
+        if (!Guid.TryParse(TokenText, out var token))
+        {
+            ErrorMessage = "Confirmation token is invalid.";
+            return;
+        }
+
+        await RunAsync(() => ConfirmAssistantProposal.ExecuteAsync(new ConfirmAssistantProposalRequest(token, Fingerprint)));
+    }
+
+    private async Task CancelAsync()
+    {
+        if (!Guid.TryParse(TokenText, out var token))
+        {
+            ErrorMessage = "Confirmation token is invalid.";
+            return;
+        }
+
+        await RunAsync(() => CancelAssistantProposal.ExecuteAsync(new CancelAssistantProposalRequest(token)));
+    }
+
+    private async Task RunAsync(Func<Task<AssistantConfirmationResult>> action)
+    {
+        try
+        {
+            Result = await action();
+            ErrorMessage = null;
+        }
+        catch (DomainValidationException exception)
+        {
+            Result = null;
+            ErrorMessage = exception.Message;
+        }
+    }
+}

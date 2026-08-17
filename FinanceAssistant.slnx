@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinanceAssistant.Application/FinanceAssistant.Application.csproj" />
+    <Project Path="src/FinanceAssistant.Domain/FinanceAssistant.Domain.csproj" />
+    <Project Path="src/FinanceAssistant.Infrastructure/FinanceAssistant.Infrastructure.csproj" />
+    <Project Path="src/FinanceAssistant.Web/FinanceAssistant.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FinanceAssistant.Application.Tests/FinanceAssistant.Application.Tests.csproj" />
+    <Project Path="tests/FinanceAssistant.Architecture.Tests/FinanceAssistant.Architecture.Tests.csproj" />
+    <Project Path="tests/FinanceAssistant.Domain.Tests/FinanceAssistant.Domain.Tests.csproj" />
+    <Project Path="tests/FinanceAssistant.Infrastructure.IntegrationTests/FinanceAssistant.Infrastructure.IntegrationTests.csproj" />
+    <Project Path="tests/FinanceAssistant.Web.Tests/FinanceAssistant.Web.Tests.csproj" />
+  </Folder>
+</Solution>

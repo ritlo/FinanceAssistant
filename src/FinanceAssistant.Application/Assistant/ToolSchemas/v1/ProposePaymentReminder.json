@@ -1,0 +1,14 @@
+{
+  "name": "ProposePaymentReminder",
+  "kind": "writeProposal",
+  "description": "Propose a payment reminder write. Confirmation is required before persistence.",
+  "parameters": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "content": { "type": "string" },
+      "dueDate": { "type": "string", "format": "date" }
+    },
+    "required": [ "content", "dueDate" ]
+  }
+}
